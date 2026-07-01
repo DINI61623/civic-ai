@@ -1,12 +1,10 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, GraduationCap, Briefcase, Search, User, UserCheck, Heart, Sparkles, Building, Trophy, Bell, ChevronRight } from 'lucide-react';
-import { EXAMS_MOCK } from './exams/page';
-import { SCHEMES_MOCK } from './schemes/page';
-import { SCHOLARSHIPS_MOCK } from './scholarships/page';
-import { EDUCATION_MOCK } from './education/page';
+import { ArrowRight, BookOpen, GraduationCap, Briefcase, Search, User, UserCheck, Heart, Sparkles, Building, Trophy, Bell, ChevronRight, Loader2 } from 'lucide-react';
+import { api, Exam, Scheme, Scholarship, Education } from '@/services/api';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -22,12 +20,42 @@ const staggerContainer = {
 };
 
 export default function Home() {
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [schemes, setSchemes] = useState<Scheme[]>([]);
+  const [scholarships, setScholarships] = useState<Scholarship[]>([]);
+  const [educationList, setEducationList] = useState<Education[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchFeaturedData() {
+      try {
+        const [examsData, schemesData, scholarshipsData, eduData] = await Promise.all([
+          api.getExams(),
+          api.getSchemes(),
+          api.getScholarships(),
+          api.getEducation()
+        ]);
+        
+        // Take top 3 for featured sections
+        setExams(examsData.slice(0, 3));
+        setSchemes(schemesData.slice(0, 3));
+        setScholarships(scholarshipsData.slice(0, 3));
+        setEducationList(eduData.slice(0, 3));
+      } catch (error) {
+        console.error('Error fetching featured data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchFeaturedData();
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       
       {/* Hero Section */}
       <section className="relative pt-24 pb-32 overflow-hidden bg-gradient-to-br from-primary via-primary to-secondary">
-        {/* Abstract Shapes & Glassmorphism Background */}
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <motion.div 
           animate={{ scale: [1, 1.1, 1], rotate: [0, 5, 0] }}
@@ -62,7 +90,6 @@ export default function Home() {
               Discover government exams, scholarships, welfare schemes, higher education opportunities, and official public services from one intelligent platform.
             </motion.p>
 
-            {/* AI Search Box (Glassmorphism) */}
             <motion.div variants={fadeUp} className="bg-white/10 backdrop-blur-xl p-2 md:p-3 rounded-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.1)] max-w-3xl mx-auto mb-6 flex flex-col sm:flex-row items-center gap-2 transition-transform hover:scale-[1.01]">
               <div className="flex-1 flex items-center gap-3 px-4 w-full h-14">
                 <Search className="h-6 w-6 text-white/70 shrink-0" />
@@ -80,7 +107,6 @@ export default function Home() {
               </Link>
             </motion.div>
 
-            {/* Suggestion Chips */}
             <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-2 max-w-3xl mx-auto">
               <span className="text-sm text-white/70 font-medium py-1.5 px-2">Popular:</span>
               {['Government Jobs', 'Scholarships', 'Schemes', 'Higher Education'].map((chip) => (
@@ -93,7 +119,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Latest Government Updates (Marquee) */}
+      {/* Marquee */}
       <div className="bg-white border-b border-border shadow-sm py-3 overflow-hidden">
         <div className="container mx-auto px-4 flex items-center gap-4">
           <span className="font-bold text-foreground shrink-0 flex items-center gap-2"><Bell className="h-4 w-4 text-warning" /> Updates:</span>
@@ -105,7 +131,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Explore By Category */}
+      {/* Categories */}
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -146,28 +172,32 @@ export default function Home() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {EXAMS_MOCK.map((exam) => (
-              <div key={exam.id} className="bg-card border border-border rounded-2xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
-                <div className="mb-5">
-                  <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">{exam.department}</span>
-                </div>
-                <h3 className="text-xl font-bold text-foreground mb-3">{exam.name}</h3>
-                <p className="text-sm text-foreground-muted mb-8 flex-1">Qualification: <span className="font-medium text-foreground">{exam.eligibility}</span></p>
-                
-                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                  <div className="text-sm">
-                    <span className="text-foreground-muted block mb-0.5 text-xs">Closing Date</span>
-                    <span className="font-semibold text-danger">{exam.lastDate}</span>
+          {loading ? (
+             <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {exams.map((exam) => (
+                <div key={exam.id} className="bg-card border border-border rounded-2xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+                  <div className="mb-5">
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">{exam.departments?.name || 'Govt'}</span>
                   </div>
-                  <Link href={`/exams/${exam.id}`} className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 px-5 py-2.5 rounded-lg transition-colors shadow-sm">
-                    Apply Now
-                  </Link>
+                  <h3 className="text-xl font-bold text-foreground mb-3">{exam.title}</h3>
+                  <p className="text-sm text-foreground-muted mb-8 flex-1">Qualification: <span className="font-medium text-foreground">{exam.eligibility}</span></p>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <div className="text-sm">
+                      <span className="text-foreground-muted block mb-0.5 text-xs">Closing Date</span>
+                      <span className="font-semibold text-danger">{exam.last_date}</span>
+                    </div>
+                    <Link href={exam.apply_link || '#'} className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 px-5 py-2.5 rounded-lg transition-colors shadow-sm">
+                      Apply Now
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -185,10 +215,12 @@ export default function Home() {
                 <Link href="/schemes" className="text-primary font-semibold text-sm hover:underline">View All</Link>
               </div>
               <div className="space-y-4">
-                {SCHEMES_MOCK.slice(0, 3).map((scheme) => (
-                  <Link key={scheme.id} href={`/schemes/${scheme.id}`} className="block bg-card border border-border p-5 rounded-2xl hover:border-primary/30 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all group">
+                {loading ? (
+                   <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+                ) : schemes.map((scheme) => (
+                  <Link key={scheme.id} href={scheme.official_website || '#'} target="_blank" className="block bg-card border border-border p-5 rounded-2xl hover:border-primary/30 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all group">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{scheme.name}</h3>
+                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{scheme.title}</h3>
                       <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md font-semibold">{scheme.category}</span>
                     </div>
                     <p className="text-sm text-foreground-muted truncate">{scheme.benefits}</p>
@@ -206,15 +238,17 @@ export default function Home() {
                 <Link href="/scholarships" className="text-primary font-semibold text-sm hover:underline">View All</Link>
               </div>
               <div className="space-y-4">
-                {SCHOLARSHIPS_MOCK.slice(0, 3).map((scholarship) => (
-                  <Link key={scholarship.id} href={`/scholarships/${scholarship.id}`} className="block bg-card border border-border p-5 rounded-2xl hover:border-primary/30 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all group">
+                {loading ? (
+                   <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+                ) : scholarships.map((scholarship) => (
+                  <Link key={scholarship.id} href={scholarship.official_website || '#'} target="_blank" className="block bg-card border border-border p-5 rounded-2xl hover:border-primary/30 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all group">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{scholarship.name}</h3>
+                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{scholarship.title}</h3>
                       <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md font-semibold">{scholarship.type}</span>
                     </div>
                     <div className="flex justify-between items-center mt-3">
                       <p className="text-sm text-foreground-muted truncate flex-1 pr-4">{scholarship.eligibility}</p>
-                      <span className="text-xs font-semibold text-danger bg-danger/10 px-2 py-1 rounded-md shrink-0">By: {scholarship.lastDate}</span>
+                      <span className="text-xs font-semibold text-danger bg-danger/10 px-2 py-1 rounded-md shrink-0">By: {scholarship.last_date}</span>
                     </div>
                   </Link>
                 ))}
@@ -233,20 +267,24 @@ export default function Home() {
             <p className="text-foreground-muted">Premier institutes, exams, and fellowships</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {EDUCATION_MOCK.map((ed) => (
-              <div key={ed.id} className="bg-card border border-border p-8 rounded-2xl text-center shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-secondary text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-primary/20">
-                  {ed.type.includes('University') ? <Building className="h-8 w-8" /> : ed.type.includes('Exam') ? <Trophy className="h-8 w-8" /> : <GraduationCap className="h-8 w-8" />}
+          {loading ? (
+             <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {educationList.map((ed) => (
+                <div key={ed.id} className="bg-card border border-border p-8 rounded-2xl text-center shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all">
+                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-secondary text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-primary/20">
+                    {ed.type === 'University' ? <Building className="h-8 w-8" /> : ed.type === 'Entrance Exam' ? <Trophy className="h-8 w-8" /> : <GraduationCap className="h-8 w-8" />}
+                  </div>
+                  <h3 className="font-bold text-xl mb-3 text-foreground">{ed.title}</h3>
+                  <p className="text-sm text-foreground-muted mb-6">{ed.details}</p>
+                  <Link href={ed.official_website || '#'} target="_blank" className="inline-flex items-center gap-1 text-primary font-semibold text-sm hover:underline">
+                    Explore Details <ChevronRight className="h-4 w-4" />
+                  </Link>
                 </div>
-                <h3 className="font-bold text-xl mb-3 text-foreground">{ed.name}</h3>
-                <p className="text-sm text-foreground-muted mb-6">{ed.details}</p>
-                <Link href={`/education/${ed.id}`} className="inline-flex items-center gap-1 text-primary font-semibold text-sm hover:underline">
-                  Explore Details <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

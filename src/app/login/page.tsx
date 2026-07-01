@@ -1,82 +1,161 @@
-import Link from 'next/link';
-import { Landmark } from 'lucide-react';
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Landmark, Mail, Lock, LogIn, Chrome } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+        if (error) throw error;
+        alert('Check your email for the confirmation link!');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+        router.push('/dashboard');
+        router.refresh();
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = () => {
+    // Just navigate to the homepage or exams for guests
+    router.push('/exams');
+  };
+
   return (
-    <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900/50">
-      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-800 p-8 sm:p-10 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-700">
-        <div className="text-center">
-          <div className="bg-primary/10 inline-flex p-3 rounded-full mb-4">
-            <Landmark className="h-10 w-10 text-primary" />
+    <div className="min-h-[80vh] flex items-center justify-center p-4 bg-background">
+      <div className="w-full max-w-md bg-card border border-border rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+        <div className="text-center mb-8">
+          <div className="inline-flex bg-gradient-to-br from-primary to-secondary p-3 rounded-2xl mb-4 shadow-lg shadow-primary/20">
+            <Landmark className="h-8 w-8 text-white" />
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Welcome to CivicAI
-          </h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Don't have an account?{' '}
-            <Link href="/login" className="font-medium text-primary hover:text-primary/80 transition-colors">
-              Sign up today
-            </Link>
-          </p>
+          <h1 className="text-2xl font-bold text-foreground">Welcome to CivicAI</h1>
+          <p className="text-foreground-muted mt-2 text-sm">Sign in to track your applications and receive AI recommendations.</p>
         </div>
-        
-        <form className="mt-8 space-y-6" action="#">
-          <div className="space-y-4 rounded-md shadow-sm">
-            <div>
-              <label htmlFor="email-address" className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1">Email address</label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="relative block w-full rounded-lg border-0 py-2.5 px-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 dark:bg-slate-900 dark:text-white dark:ring-slate-700 transition-all shadow-sm"
-                placeholder="you@example.com"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="relative block w-full rounded-lg border-0 py-2.5 px-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 dark:bg-slate-900 dark:text-white dark:ring-slate-700 transition-all shadow-sm"
-                placeholder="••••••••"
-              />
-            </div>
+
+        {error && (
+          <div className="bg-danger/10 text-danger p-3 rounded-xl text-sm font-medium mb-6 border border-danger/20">
+            {error}
           </div>
+        )}
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-700 dark:text-slate-300">
-                Remember me
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <a href="#" className="font-medium text-primary hover:text-primary/80 transition-colors">
-                Forgot password?
-              </a>
-            </div>
-          </div>
-
+        <form onSubmit={handleEmailAuth} className="space-y-4 mb-6">
           <div>
-            <button
-              type="submit"
-              className="group relative flex w-full justify-center rounded-lg bg-primary px-3 py-3 text-sm font-semibold text-white hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-all shadow-md hover:shadow-lg"
-            >
-              Sign in
-            </button>
+            <label className="text-sm font-semibold text-foreground block mb-2">Email Address</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+              <input 
+                type="email" 
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com" 
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+              />
+            </div>
           </div>
+          <div>
+            <label className="text-sm font-semibold text-foreground block mb-2">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+              <input 
+                type="password" 
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••" 
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+              />
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50 mt-2"
+          >
+            {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')} <LogIn className="h-4 w-4" />
+          </button>
         </form>
+
+        <div className="text-center mb-6">
+          <button 
+            type="button" 
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="text-sm text-primary font-semibold hover:underline"
+          >
+            {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
+          </button>
+        </div>
+
+        <div className="relative flex items-center mb-6">
+          <div className="flex-grow border-t border-border"></div>
+          <span className="flex-shrink-0 mx-4 text-foreground-muted text-xs font-medium uppercase">Or continue with</span>
+          <div className="flex-grow border-t border-border"></div>
+        </div>
+
+        <div className="space-y-3">
+          <button 
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="w-full bg-white border border-border hover:bg-slate-50 text-foreground font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+          >
+            <Chrome className="h-4 w-4" /> Google
+          </button>
+          <button 
+            type="button"
+            onClick={handleGuestLogin}
+            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl transition-colors"
+          >
+            Continue as Guest
+          </button>
+        </div>
       </div>
     </div>
   );
