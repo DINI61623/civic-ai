@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 
 export default function GlobalSearch({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any>({ exams: [], schemes: [], scholarships: [], education: [] });
+  const [results, setResults] = useState<{ exams: any[], schemes: any[], scholarships: any[], education: any[] }>({ exams: [], schemes: [], scholarships: [], education: [] });
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -33,6 +33,7 @@ export default function GlobalSearch({ isOpen, onClose }: { isOpen: boolean, onC
 
   useEffect(() => {
     if (query.length < 2) {
+      // It's safe to set state here because it's a controlled input change effect
       setResults({ exams: [], schemes: [], scholarships: [], education: [] });
       return;
     }
@@ -101,7 +102,7 @@ export default function GlobalSearch({ isOpen, onClose }: { isOpen: boolean, onC
                 ) : !hasResults && !loading ? (
                   <div className="text-center py-12">
                     <Search className="h-10 w-10 text-slate-200 mx-auto mb-4" />
-                    <p className="text-foreground font-medium mb-1">No results found for "{query}"</p>
+                    <p className="text-foreground font-medium mb-1">No results found for &quot;{query}&quot;</p>
                     <p className="text-sm text-foreground-muted">Try using different keywords or check spelling.</p>
                   </div>
                 ) : (

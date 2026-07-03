@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, Calendar, ArrowUpRight, CheckCircle2, Loader2, Bookmark } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { api, Scholarship } from '@/services/api';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -9,7 +10,8 @@ import { useAuth } from '@/components/providers/AuthProvider';
 export default function ScholarshipsPage() {
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('query') || '');
   const [type, setType] = useState('All Types');
   const [savedItemIds, setSavedItemIds] = useState<Set<string>>(new Set());
   const { user, showAuthModal } = useAuth();
@@ -30,7 +32,8 @@ export default function ScholarshipsPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const { data } = await api.getScholarships(searchQuery, type);
+        const stateName = searchParams.get('state') || undefined;
+        const { data } = await api.getScholarships(searchQuery, type, stateName);
         setScholarships(data);
       } catch (error) {
         console.error('Error fetching scholarships:', error);
@@ -43,7 +46,7 @@ export default function ScholarshipsPage() {
       fetchData();
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, type]);
+  }, [searchQuery, type, searchParams]);
 
   const toggleSave = async (scholarshipId: string) => {
     if (!isAuthenticated) {

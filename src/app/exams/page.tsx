@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Briefcase, Calendar, GraduationCap, Search, ArrowUpRight, Loader2, Bookmark } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { api, Exam } from '@/services/api';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -9,7 +10,8 @@ import { useAuth } from '@/components/providers/AuthProvider';
 export default function ExamsPage() {
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('query') || '');
   const [qualification, setQualification] = useState('Any Qualification');
   const [savedItemIds, setSavedItemIds] = useState<Set<string>>(new Set());
   const { user, showAuthModal } = useAuth();
@@ -30,7 +32,8 @@ export default function ExamsPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const { data } = await api.getExams(searchQuery, qualification);
+        const stateName = searchParams.get('state') || undefined;
+        const { data } = await api.getExams(searchQuery, qualification, stateName);
         setExams(data);
       } catch (error) {
         console.error('Error fetching exams:', error);
@@ -43,7 +46,7 @@ export default function ExamsPage() {
       fetchData();
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, qualification]);
+  }, [searchQuery, qualification, searchParams]);
 
   const toggleSave = async (examId: string) => {
     if (!isAuthenticated) {

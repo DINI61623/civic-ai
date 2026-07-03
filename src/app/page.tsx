@@ -113,11 +113,18 @@ export default function Home() {
             {/* Popular Searches */}
             <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-2 max-w-3xl mx-auto">
               <span className="text-sm text-white/70 font-medium py-1.5 px-2">Popular Searches:</span>
-              {['UPSC Notification 2026', 'PM Kisan Check', 'Minority Scholarship', 'Railway Jobs'].map((chip) => (
-                <Link key={chip} href="#" className="text-sm bg-white/5 border border-white/10 text-white hover:bg-white/20 rounded-full px-4 py-1.5 transition-colors backdrop-blur-sm">
-                  {chip}
-                </Link>
-              ))}
+              <Link href="/exams?query=UPSC" className="text-sm bg-white/5 border border-white/10 text-white hover:bg-white/20 rounded-full px-4 py-1.5 transition-colors backdrop-blur-sm">
+                UPSC Notification 2026
+              </Link>
+              <Link href="/schemes?query=Kisan" className="text-sm bg-white/5 border border-white/10 text-white hover:bg-white/20 rounded-full px-4 py-1.5 transition-colors backdrop-blur-sm">
+                PM Kisan Check
+              </Link>
+              <Link href="/scholarships?query=Minority" className="text-sm bg-white/5 border border-white/10 text-white hover:bg-white/20 rounded-full px-4 py-1.5 transition-colors backdrop-blur-sm">
+                Minority Scholarship
+              </Link>
+              <Link href="/exams?query=Railway" className="text-sm bg-white/5 border border-white/10 text-white hover:bg-white/20 rounded-full px-4 py-1.5 transition-colors backdrop-blur-sm">
+                Railway Jobs
+              </Link>
             </motion.div>
           </motion.div>
         </div>

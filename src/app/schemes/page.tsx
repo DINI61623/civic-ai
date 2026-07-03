@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, Gift, ArrowUpRight, CheckCircle2, Loader2, Bookmark } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { api, Scheme } from '@/services/api';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -9,7 +10,8 @@ import { useAuth } from '@/components/providers/AuthProvider';
 export default function SchemesPage() {
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('query') || '');
   const [category, setCategory] = useState('All Categories');
   const [savedItemIds, setSavedItemIds] = useState<Set<string>>(new Set());
   const { user, showAuthModal } = useAuth();
@@ -30,7 +32,8 @@ export default function SchemesPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const { data } = await api.getSchemes(searchQuery, category);
+        const stateName = searchParams.get('state') || undefined;
+        const { data } = await api.getSchemes(searchQuery, category, stateName);
         setSchemes(data);
       } catch (error) {
         console.error('Error fetching schemes:', error);
@@ -43,7 +46,7 @@ export default function SchemesPage() {
       fetchData();
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, category]);
+  }, [searchQuery, category, searchParams]);
 
   const toggleSave = async (schemeId: string) => {
     if (!isAuthenticated) {

@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import AuthModal from '@/components/auth/AuthModal';
 
-type User = any;
+import type { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;

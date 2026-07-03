@@ -8,10 +8,16 @@ export type Education = Database['public']['Tables']['education']['Row'] & { sta
 
 export const api = {
   // --- Exams ---
-  async getExams(searchQuery?: string, qualification?: string, page = 0, limit = 50) {
+  async getExams(searchQuery?: string, qualification?: string, stateName?: string, page = 0, limit = 50) {
     const supabase = createClient();
-    let query = supabase.from('exams').select('*, states(name), departments(name)', { count: 'exact' });
     
+    // We want to return both All India and the specific state if stateName is provided
+    let query = supabase.from('exams').select('*, states!inner(name), departments(name)', { count: 'exact' });
+    
+    if (stateName && stateName !== 'All India') {
+      query = query.in('states.name', ['All India', stateName]);
+    }
+
     if (searchQuery) {
       query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
     }
@@ -56,10 +62,14 @@ export const api = {
   },
 
   // --- Schemes ---
-  async getSchemes(searchQuery?: string, category?: string, page = 0, limit = 50) {
+  async getSchemes(searchQuery?: string, category?: string, stateName?: string, page = 0, limit = 50) {
     const supabase = createClient();
-    let query = supabase.from('schemes').select('*, states(name), departments(name)', { count: 'exact' });
+    let query = supabase.from('schemes').select('*, states!inner(name), departments(name)', { count: 'exact' });
     
+    if (stateName && stateName !== 'All India') {
+      query = query.in('states.name', ['All India', stateName]);
+    }
+
     if (searchQuery) {
       query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
     }
@@ -93,10 +103,14 @@ export const api = {
   },
 
   // --- Scholarships ---
-  async getScholarships(searchQuery?: string, type?: string, page = 0, limit = 50) {
+  async getScholarships(searchQuery?: string, type?: string, stateName?: string, page = 0, limit = 50) {
     const supabase = createClient();
-    let query = supabase.from('scholarships').select('*, states(name)', { count: 'exact' });
+    let query = supabase.from('scholarships').select('*, states!inner(name)', { count: 'exact' });
     
+    if (stateName && stateName !== 'All India') {
+      query = query.in('states.name', ['All India', stateName]);
+    }
+
     if (searchQuery) {
       query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
     }
@@ -120,10 +134,14 @@ export const api = {
   },
 
   // --- Education ---
-  async getEducation(searchQuery?: string, category?: string, page = 0, limit = 50) {
+  async getEducation(searchQuery?: string, category?: string, stateName?: string, page = 0, limit = 50) {
     const supabase = createClient();
-    let query = supabase.from('education').select('*, states(name)', { count: 'exact' });
+    let query = supabase.from('education').select('*, states!inner(name)', { count: 'exact' });
     
+    if (stateName && stateName !== 'All India') {
+      query = query.in('states.name', ['All India', stateName]);
+    }
+
     if (searchQuery) {
       query = query.or(`title.ilike.%${searchQuery}%,details.ilike.%${searchQuery}%`);
     }
@@ -143,6 +161,13 @@ export const api = {
       
     if (error) throw error;
     return { data: data as Education[], count };
+  },
+
+  async getEducationById(id: string) {
+    const supabase = createClient();
+    const { data, error } = await supabase.from('education').select('*, states(name)').eq('id', id).single();
+    if (error) throw error;
+    return data as Education;
   },
 
   // --- Global Search ---
@@ -243,7 +268,7 @@ export const api = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
     
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('saved_items')
       .select('id')
       .match({ user_id: user.id, item_type: itemType, item_id: itemId })
