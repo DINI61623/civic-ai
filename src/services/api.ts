@@ -13,7 +13,6 @@ export const api = {
     let query = supabase.from('exams').select('*, states(name), departments(name)', { count: 'exact' });
     
     if (searchQuery) {
-      // Use textSearch for natural language matching if full-text search is setup, fallback to ilike
       query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
     }
     if (qualification && qualification !== 'Any Qualification') {
@@ -26,6 +25,27 @@ export const api = {
       
     if (error) throw error;
     return { data: data as Exam[], count };
+  },
+
+  async getTrendingExams(limit = 3) {
+    const supabase = createClient();
+    // In a real app this might use analytics, here we order by vacancies or random
+    const { data, error } = await supabase.from('exams')
+      .select('*, states(name), departments(name)')
+      .order('vacancies', { ascending: false, nullsFirst: false })
+      .limit(limit);
+    if (error) throw error;
+    return data as Exam[];
+  },
+
+  async getLatestNotifications(limit = 5) {
+    const supabase = createClient();
+    const { data, error } = await supabase.from('exams')
+      .select('*, states(name), departments(name)')
+      .order('notification_date', { ascending: false, nullsFirst: false })
+      .limit(limit);
+    if (error) throw error;
+    return data as Exam[];
   },
 
   async getExamById(id: string) {
@@ -53,6 +73,16 @@ export const api = {
       
     if (error) throw error;
     return { data: data as Scheme[], count };
+  },
+
+  async getLatestSchemes(limit = 3) {
+    const supabase = createClient();
+    const { data, error } = await supabase.from('schemes')
+      .select('*, states(name), departments(name)')
+      .order('last_updated', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return data as Scheme[];
   },
 
   async getSchemeById(id: string) {
@@ -113,6 +143,42 @@ export const api = {
       
     if (error) throw error;
     return { data: data as Education[], count };
+  },
+
+  // --- Global Search ---
+  async globalSearch(queryStr: string) {
+    if (!queryStr || queryStr.length < 2) return { exams: [], schemes: [], scholarships: [], education: [] };
+    const supabase = createClient();
+    
+    const [exams, schemes, scholarships, education] = await Promise.all([
+      supabase.from('exams').select('id, title, states(name)').or(`title.ilike.%${queryStr}%,description.ilike.%${queryStr}%`).limit(3),
+      supabase.from('schemes').select('id, title, states(name)').or(`title.ilike.%${queryStr}%,description.ilike.%${queryStr}%`).limit(3),
+      supabase.from('scholarships').select('id, title, states(name)').or(`title.ilike.%${queryStr}%,description.ilike.%${queryStr}%`).limit(3),
+      supabase.from('education').select('id, title, states(name)').or(`title.ilike.%${queryStr}%,details.ilike.%${queryStr}%`).limit(3),
+    ]);
+
+    return {
+      exams: exams.data || [],
+      schemes: schemes.data || [],
+      scholarships: scholarships.data || [],
+      education: education.data || []
+    };
+  },
+
+  // --- Stats ---
+  async getStatistics() {
+    const supabase = createClient();
+    const [exams, schemes, scholarships] = await Promise.all([
+      supabase.from('exams').select('*', { count: 'exact', head: true }),
+      supabase.from('schemes').select('*', { count: 'exact', head: true }),
+      supabase.from('scholarships').select('*', { count: 'exact', head: true })
+    ]);
+    return {
+      examsCount: exams.count || 24,
+      schemesCount: schemes.count || 15,
+      scholarshipsCount: scholarships.count || 8,
+      usersCount: 142 // Mock for now
+    };
   },
 
   // --- User Profile & Admin ---

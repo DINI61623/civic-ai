@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Search, Gift, ArrowUpRight, CheckCircle2, Loader2, Bookmark } from 'lucide-react';
 import { api, Scheme } from '@/services/api';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function SchemesPage() {
   const [schemes, setSchemes] = useState<Scheme[]>([]);
@@ -11,22 +12,19 @@ export default function SchemesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState('All Categories');
   const [savedItemIds, setSavedItemIds] = useState<Set<string>>(new Set());
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, showAuthModal } = useAuth();
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     async function checkAuthAndLoad() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsAuthenticated(!!user);
-
       if (user) {
         const items = await api.getSavedItems();
-        const schemeIds = items.filter(i => i.item_type === 'scheme').map(i => i.item_id);
+        const schemeIds = items.filter((i: any) => i.item_type === 'scheme').map((i: any) => i.item_id);
         setSavedItemIds(new Set(schemeIds));
       }
     }
     checkAuthAndLoad();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     async function fetchData() {
@@ -48,7 +46,10 @@ export default function SchemesPage() {
   }, [searchQuery, category]);
 
   const toggleSave = async (schemeId: string) => {
-    if (!isAuthenticated) return alert('Please sign in to save opportunities!');
+    if (!isAuthenticated) {
+      showAuthModal('Sign in to save this scheme to your dashboard.');
+      return;
+    }
     
     const isSaved = savedItemIds.has(schemeId);
     

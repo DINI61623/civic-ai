@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Search, Calendar, ArrowUpRight, CheckCircle2, Loader2, Bookmark } from 'lucide-react';
 import { api, Scholarship } from '@/services/api';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function ScholarshipsPage() {
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
@@ -11,22 +12,19 @@ export default function ScholarshipsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [type, setType] = useState('All Types');
   const [savedItemIds, setSavedItemIds] = useState<Set<string>>(new Set());
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, showAuthModal } = useAuth();
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     async function checkAuthAndLoad() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsAuthenticated(!!user);
-
       if (user) {
         const items = await api.getSavedItems();
-        const scholarshipIds = items.filter(i => i.item_type === 'scholarship').map(i => i.item_id);
+        const scholarshipIds = items.filter((i: any) => i.item_type === 'scholarship').map((i: any) => i.item_id);
         setSavedItemIds(new Set(scholarshipIds));
       }
     }
     checkAuthAndLoad();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     async function fetchData() {
@@ -48,7 +46,10 @@ export default function ScholarshipsPage() {
   }, [searchQuery, type]);
 
   const toggleSave = async (scholarshipId: string) => {
-    if (!isAuthenticated) return alert('Please sign in to save opportunities!');
+    if (!isAuthenticated) {
+      showAuthModal('Sign in to save this scholarship to your dashboard.');
+      return;
+    }
     
     const isSaved = savedItemIds.has(scholarshipId);
     

@@ -20,7 +20,7 @@ export default function Dashboard() {
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
-          router.push('/login');
+          router.push('/');
           return;
         }
 
@@ -43,7 +43,7 @@ export default function Dashboard() {
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push('/');
     router.refresh();
   };
 

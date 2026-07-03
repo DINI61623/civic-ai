@@ -21,19 +21,35 @@ async function promoteAdmin(email) {
 
   console.log(`Attempting to promote ${email} to admin...`);
 
-  // Update the profiles table
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({ role: 'admin' })
-    .eq('email', email)
-    .select();
+  // First, find the user in auth.users
+  const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
+  
+  if (authError) {
+    console.error('Error fetching users:', authError.message);
+    process.exit(1);
+  }
 
-  if (error) {
-    console.error('Error:', error.message);
-  } else if (data && data.length > 0) {
-    console.log(`✅ Success! ${email} is now an admin.`);
+  const user = users.find(u => u.email === email);
+
+  if (!user) {
+    console.log(`❌ Failed. Could not find an account with email ${email}. Please sign up first.`);
+    process.exit(1);
+  }
+
+  // Upsert the profile for this user
+  const { error: upsertError } = await supabase
+    .from('profiles')
+    .upsert({ 
+      id: user.id, 
+      email: user.email, 
+      full_name: user.user_metadata?.full_name || 'Admin',
+      role: 'admin' 
+    });
+
+  if (upsertError) {
+    console.error('Error updating profile:', upsertError.message);
   } else {
-    console.log(`❌ Failed. Could not find a profile with email ${email}. Make sure the user has signed up first.`);
+    console.log(`✅ Success! ${email} is now an admin. You can now access /admin`);
   }
 }
 

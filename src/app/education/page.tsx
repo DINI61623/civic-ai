@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Search, GraduationCap, Building, Trophy, ArrowUpRight, Loader2, Bookmark } from 'lucide-react';
 import { api, Education } from '@/services/api';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function EducationPage() {
   const [educationList, setEducationList] = useState<Education[]>([]);
@@ -11,22 +12,19 @@ export default function EducationPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState('All Categories');
   const [savedItemIds, setSavedItemIds] = useState<Set<string>>(new Set());
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, showAuthModal } = useAuth();
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     async function checkAuthAndLoad() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsAuthenticated(!!user);
-
       if (user) {
         const items = await api.getSavedItems();
-        const eduIds = items.filter(i => i.item_type === 'education').map(i => i.item_id);
+        const eduIds = items.filter((i: any) => i.item_type === 'education').map((i: any) => i.item_id);
         setSavedItemIds(new Set(eduIds));
       }
     }
     checkAuthAndLoad();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     async function fetchData() {
@@ -48,7 +46,10 @@ export default function EducationPage() {
   }, [searchQuery, category]);
 
   const toggleSave = async (eduId: string) => {
-    if (!isAuthenticated) return alert('Please sign in to save opportunities!');
+    if (!isAuthenticated) {
+      showAuthModal('Sign in to save this opportunity to your dashboard.');
+      return;
+    }
     
     const isSaved = savedItemIds.has(eduId);
     
