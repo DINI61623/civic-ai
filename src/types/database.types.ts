@@ -9,6 +9,32 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          id: string
+          email: string
+          full_name: string | null
+          role: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id: string
+          email: string
+          full_name?: string | null
+          role?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          email?: string
+          full_name?: string | null
+          role?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
       departments: {
         Row: {
           id: string
@@ -38,6 +64,8 @@ export interface Database {
           state_id: string | null
           title: string
           type: string | null
+          source: string | null
+          verification_status: string | null
         }
         Insert: {
           details?: string | null
@@ -47,6 +75,8 @@ export interface Database {
           state_id?: string | null
           title: string
           type?: string | null
+          source?: string | null
+          verification_status?: string | null
         }
         Update: {
           details?: string | null
@@ -56,6 +86,8 @@ export interface Database {
           state_id?: string | null
           title?: string
           type?: string | null
+          source?: string | null
+          verification_status?: string | null
         }
       }
       exams: {
@@ -74,6 +106,16 @@ export interface Database {
           start_date: string | null
           state_id: string | null
           title: string
+          source: string | null
+          verification_status: string | null
+          salary: string | null
+          vacancies: number | null
+          category: string | null
+          selection_process: string | null
+          exam_pattern: string | null
+          syllabus_link: string | null
+          previous_papers_link: string | null
+          notification_date: string | null
         }
         Insert: {
           age_limit?: string | null
@@ -90,6 +132,16 @@ export interface Database {
           start_date?: string | null
           state_id?: string | null
           title: string
+          source?: string | null
+          verification_status?: string | null
+          salary?: string | null
+          vacancies?: number | null
+          category?: string | null
+          selection_process?: string | null
+          exam_pattern?: string | null
+          syllabus_link?: string | null
+          previous_papers_link?: string | null
+          notification_date?: string | null
         }
         Update: {
           age_limit?: string | null
@@ -106,6 +158,16 @@ export interface Database {
           start_date?: string | null
           state_id?: string | null
           title?: string
+          source?: string | null
+          verification_status?: string | null
+          salary?: string | null
+          vacancies?: number | null
+          category?: string | null
+          selection_process?: string | null
+          exam_pattern?: string | null
+          syllabus_link?: string | null
+          previous_papers_link?: string | null
+          notification_date?: string | null
         }
       }
       saved_items: {
@@ -145,6 +207,11 @@ export interface Database {
           required_documents: string | null
           state_id: string | null
           title: string
+          source: string | null
+          verification_status: string | null
+          ministry: string | null
+          application_start_date: string | null
+          application_end_date: string | null
         }
         Insert: {
           apply_link?: string | null
@@ -159,6 +226,11 @@ export interface Database {
           required_documents?: string | null
           state_id?: string | null
           title: string
+          source?: string | null
+          verification_status?: string | null
+          ministry?: string | null
+          application_start_date?: string | null
+          application_end_date?: string | null
         }
         Update: {
           apply_link?: string | null
@@ -173,6 +245,11 @@ export interface Database {
           required_documents?: string | null
           state_id?: string | null
           title?: string
+          source?: string | null
+          verification_status?: string | null
+          ministry?: string | null
+          application_start_date?: string | null
+          application_end_date?: string | null
         }
       }
       scholarships: {
@@ -187,6 +264,10 @@ export interface Database {
           state_id: string | null
           title: string
           type: string | null
+          source: string | null
+          verification_status: string | null
+          income_limit: string | null
+          documents_required: string | null
         }
         Insert: {
           apply_link?: string | null
@@ -199,6 +280,10 @@ export interface Database {
           state_id?: string | null
           title: string
           type?: string | null
+          source?: string | null
+          verification_status?: string | null
+          income_limit?: string | null
+          documents_required?: string | null
         }
         Update: {
           apply_link?: string | null
@@ -211,6 +296,10 @@ export interface Database {
           state_id?: string | null
           title?: string
           type?: string | null
+          source?: string | null
+          verification_status?: string | null
+          income_limit?: string | null
+          documents_required?: string | null
         }
       }
       states: {

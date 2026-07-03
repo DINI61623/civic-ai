@@ -1,20 +1,38 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Calendar, ArrowUpRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { Search, Calendar, ArrowUpRight, CheckCircle2, Loader2, Bookmark } from 'lucide-react';
 import { api, Scholarship } from '@/services/api';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ScholarshipsPage() {
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [type, setType] = useState('All Types');
+  const [savedItemIds, setSavedItemIds] = useState<Set<string>>(new Set());
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    async function checkAuthAndLoad() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+
+      if (user) {
+        const items = await api.getSavedItems();
+        const scholarshipIds = items.filter(i => i.item_type === 'scholarship').map(i => i.item_id);
+        setSavedItemIds(new Set(scholarshipIds));
+      }
+    }
+    checkAuthAndLoad();
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       try {
-        const data = await api.getScholarships(searchQuery, type);
+        const { data } = await api.getScholarships(searchQuery, type);
         setScholarships(data);
       } catch (error) {
         console.error('Error fetching scholarships:', error);
@@ -28,6 +46,28 @@ export default function ScholarshipsPage() {
     }, 300);
     return () => clearTimeout(timeoutId);
   }, [searchQuery, type]);
+
+  const toggleSave = async (scholarshipId: string) => {
+    if (!isAuthenticated) return alert('Please sign in to save opportunities!');
+    
+    const isSaved = savedItemIds.has(scholarshipId);
+    
+    const newSaved = new Set(savedItemIds);
+    if (isSaved) newSaved.delete(scholarshipId);
+    else newSaved.add(scholarshipId);
+    setSavedItemIds(newSaved);
+
+    try {
+      if (isSaved) {
+        await api.unsaveItem('scholarship', scholarshipId);
+      } else {
+        await api.saveItem('scholarship', scholarshipId);
+      }
+    } catch (error) {
+      console.error('Error toggling save:', error);
+      setSavedItemIds(savedItemIds);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl">
@@ -91,45 +131,62 @@ export default function ScholarshipsPage() {
               </button>
             </div>
           ) : (
-            scholarships.map(scholarship => (
-              <div key={scholarship.id} className="bg-card p-6 md:p-8 rounded-3xl border border-border shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all group">
-                <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-5">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="bg-purple-50 text-purple-700 text-xs font-bold px-3 py-1 rounded-lg">
-                        {scholarship.states?.name || 'All India'}
-                      </span>
-                      <span className="text-xs text-foreground-muted font-medium bg-slate-100 px-3 py-1 rounded-lg">{scholarship.type} Scholarship</span>
-                    </div>
-                    <h2 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{scholarship.title}</h2>
-                  </div>
-                  <Link href={scholarship.official_website || '#'} target="_blank" className="shrink-0 bg-primary/10 hover:bg-primary/20 text-primary px-5 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center gap-1.5">
-                    View Details <ArrowUpRight className="h-4 w-4" />
-                  </Link>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-border pt-5 mt-2">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-slate-100 p-2 rounded-lg text-slate-500 mt-0.5 shrink-0">
-                      <CheckCircle2 className="h-5 w-5" />
-                    </div>
+            scholarships.map(scholarship => {
+              const isSaved = savedItemIds.has(scholarship.id);
+              return (
+                <div key={scholarship.id} className="bg-card p-6 md:p-8 rounded-3xl border border-border shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all group relative">
+                  
+                  <button 
+                    onClick={() => toggleSave(scholarship.id)}
+                    className="absolute top-6 right-6 md:top-8 md:right-8 p-2 rounded-full hover:bg-slate-100 transition-colors z-10"
+                    title={isSaved ? "Unsave Scholarship" : "Save Scholarship"}
+                  >
+                    <Bookmark className={`h-6 w-6 ${isSaved ? 'fill-primary text-primary' : 'text-slate-400 hover:text-primary'}`} />
+                  </button>
+
+                  <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-5 pr-12">
                     <div>
-                      <div className="text-xs text-foreground-muted font-medium mb-1">Eligibility</div>
-                      <div className="text-sm font-semibold text-foreground">{scholarship.eligibility}</div>
+                      <div className="flex items-center gap-3 mb-3 flex-wrap">
+                        <span className="bg-purple-50 text-purple-700 text-xs font-bold px-3 py-1 rounded-lg">
+                          {scholarship.states?.name || 'All India'}
+                        </span>
+                        <span className="text-xs text-foreground-muted font-medium bg-slate-100 px-3 py-1 rounded-lg">{scholarship.type} Scholarship</span>
+                        {scholarship.income_limit && (
+                          <span className="text-xs text-amber-600 font-bold bg-amber-50 px-3 py-1 rounded-lg">{scholarship.income_limit}</span>
+                        )}
+                      </div>
+                      <h2 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{scholarship.title}</h2>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <div className="bg-red-50 p-2 rounded-lg text-danger mt-0.5 shrink-0">
-                      <Calendar className="h-5 w-5" />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-border pt-5 mt-2">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-slate-100 p-2 rounded-lg text-slate-500 mt-0.5 shrink-0">
+                        <CheckCircle2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="text-xs text-foreground-muted font-medium mb-1">Eligibility</div>
+                        <div className="text-sm font-semibold text-foreground">{scholarship.eligibility}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-xs text-foreground-muted font-medium mb-1">Last Date</div>
-                      <div className="text-sm font-bold text-danger">{scholarship.last_date}</div>
+                    <div className="flex items-start justify-between col-span-1">
+                      <div className="flex items-start gap-3 pr-4">
+                        <div className="bg-red-50 p-2 rounded-lg text-danger mt-0.5 shrink-0">
+                          <Calendar className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-foreground-muted font-medium mb-1">Last Date</div>
+                          <div className="text-sm font-bold text-danger">{scholarship.last_date}</div>
+                        </div>
+                      </div>
+                      <Link href={scholarship.official_website || '#'} target="_blank" className="shrink-0 bg-primary/10 hover:bg-primary/20 text-primary px-5 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center gap-1.5 self-end">
+                        Details <ArrowUpRight className="h-4 w-4" />
+                      </Link>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

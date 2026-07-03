@@ -1,20 +1,38 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, GraduationCap, Building, Trophy, ArrowUpRight, Loader2 } from 'lucide-react';
+import { Search, GraduationCap, Building, Trophy, ArrowUpRight, Loader2, Bookmark } from 'lucide-react';
 import { api, Education } from '@/services/api';
+import { createClient } from '@/lib/supabase/client';
 
 export default function EducationPage() {
   const [educationList, setEducationList] = useState<Education[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState('All Categories');
+  const [savedItemIds, setSavedItemIds] = useState<Set<string>>(new Set());
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    async function checkAuthAndLoad() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+
+      if (user) {
+        const items = await api.getSavedItems();
+        const eduIds = items.filter(i => i.item_type === 'education').map(i => i.item_id);
+        setSavedItemIds(new Set(eduIds));
+      }
+    }
+    checkAuthAndLoad();
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       try {
-        const data = await api.getEducation(searchQuery, category);
+        const { data } = await api.getEducation(searchQuery, category);
         setEducationList(data);
       } catch (error) {
         console.error('Error fetching education:', error);
@@ -29,8 +47,30 @@ export default function EducationPage() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery, category]);
 
+  const toggleSave = async (eduId: string) => {
+    if (!isAuthenticated) return alert('Please sign in to save opportunities!');
+    
+    const isSaved = savedItemIds.has(eduId);
+    
+    const newSaved = new Set(savedItemIds);
+    if (isSaved) newSaved.delete(eduId);
+    else newSaved.add(eduId);
+    setSavedItemIds(newSaved);
+
+    try {
+      if (isSaved) {
+        await api.unsaveItem('education', eduId);
+      } else {
+        await api.saveItem('education', eduId);
+      }
+    } catch (error) {
+      console.error('Error toggling save:', error);
+      setSavedItemIds(savedItemIds);
+    }
+  };
+
   return (
-    <div className="container mxauto px-4 py-12 max-w-7xl">
+    <div className="container mx-auto px-4 py-12 max-w-7xl">
       <div className="mb-10">
         <h1 className="text-4xl font-extrabold mb-3 text-foreground tracking-tight">Higher Education</h1>
         <p className="text-lg text-foreground-muted max-w-3xl">Explore government universities, entrance exams, and prestigious fellowships.</p>
@@ -92,33 +132,45 @@ export default function EducationPage() {
               </button>
             </div>
           ) : (
-            educationList.map(item => (
-              <div key={item.id} className="bg-card p-6 md:p-8 rounded-3xl border border-border shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all group">
-                <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-5">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-lg">
-                        {item.states?.name || 'All India'}
-                      </span>
-                      <span className="text-xs text-foreground-muted font-medium bg-slate-100 px-3 py-1 rounded-lg flex items-center gap-1.5">
-                        {item.type === 'University' ? <Building className="h-3.5 w-3.5" /> : item.type === 'Entrance Exam' ? <Trophy className="h-3.5 w-3.5" /> : <GraduationCap className="h-3.5 w-3.5" />}
-                        {item.type}
-                      </span>
+            educationList.map(item => {
+              const isSaved = savedItemIds.has(item.id);
+              return (
+                <div key={item.id} className="bg-card p-6 md:p-8 rounded-3xl border border-border shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all group relative">
+                  
+                  <button 
+                    onClick={() => toggleSave(item.id)}
+                    className="absolute top-6 right-6 md:top-8 md:right-8 p-2 rounded-full hover:bg-slate-100 transition-colors z-10"
+                    title={isSaved ? "Unsave Item" : "Save Item"}
+                  >
+                    <Bookmark className={`h-6 w-6 ${isSaved ? 'fill-primary text-primary' : 'text-slate-400 hover:text-primary'}`} />
+                  </button>
+
+                  <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-5 pr-12">
+                    <div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-lg">
+                          {item.states?.name || 'All India'}
+                        </span>
+                        <span className="text-xs text-foreground-muted font-medium bg-slate-100 px-3 py-1 rounded-lg flex items-center gap-1.5">
+                          {item.type === 'University' ? <Building className="h-3.5 w-3.5" /> : item.type === 'Entrance Exam' ? <Trophy className="h-3.5 w-3.5" /> : <GraduationCap className="h-3.5 w-3.5" />}
+                          {item.type}
+                        </span>
+                      </div>
+                      <h2 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{item.title}</h2>
                     </div>
-                    <h2 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{item.title}</h2>
+                    <Link href={item.official_website || '#'} target="_blank" className="shrink-0 bg-primary/10 hover:bg-primary/20 text-primary px-5 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center gap-1.5 self-end md:self-start mt-4 md:mt-0">
+                      Explore Details <ArrowUpRight className="h-4 w-4" />
+                    </Link>
                   </div>
-                  <Link href={item.official_website || '#'} target="_blank" className="shrink-0 bg-primary/10 hover:bg-primary/20 text-primary px-5 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center gap-1.5">
-                    View Details <ArrowUpRight className="h-4 w-4" />
-                  </Link>
+                  
+                  <div className="border-t border-border pt-5 mt-2">
+                    <p className="text-[15px] leading-relaxed text-foreground-muted">
+                      {item.details}
+                    </p>
+                  </div>
                 </div>
-                
-                <div className="border-t border-border pt-5 mt-2">
-                  <p className="text-[15px] leading-relaxed text-foreground-muted">
-                    {item.details}
-                  </p>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
