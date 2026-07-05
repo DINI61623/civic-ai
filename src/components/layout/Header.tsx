@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Landmark, Menu, MessageSquareText, X, ChevronRight, User } from 'lucide-react';
@@ -66,7 +66,9 @@ export default function Header() {
           
           {/* Desktop/Tablet State Filter */}
           <div className="hidden sm:block">
-            <StateFilter />
+            <Suspense fallback={<div className="h-10 w-28 bg-slate-100 animate-pulse rounded-2xl" />}>
+              <StateFilter />
+            </Suspense>
           </div>
 
           <Link 
@@ -137,7 +139,9 @@ export default function Header() {
                 {/* Mobile State Filter */}
                 <div className="sm:hidden block p-1 bg-slate-50 border border-slate-100 rounded-2xl">
                   <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider block px-3 pt-2 pb-1">Filter Region</span>
-                  <StateFilter />
+                  <Suspense fallback={<div className="h-10 w-full bg-slate-100 animate-pulse rounded-2xl" />}>
+                    <StateFilter />
+                  </Suspense>
                 </div>
 
                 {/* Vertical Navigation Links */}

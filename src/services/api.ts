@@ -243,8 +243,7 @@ export const api = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Must be logged in to save items");
 
-    const { error } = await supabase
-      .from('saved_items')
+    const { error } = await (supabase.from('saved_items') as any)
       .insert({ user_id: user.id, item_type: itemType, item_id: itemId });
     
     if (error) throw error;
@@ -255,8 +254,7 @@ export const api = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Must be logged in to unsave items");
 
-    const { error } = await supabase
-      .from('saved_items')
+    const { error } = await (supabase.from('saved_items') as any)
       .delete()
       .match({ user_id: user.id, item_type: itemType, item_id: itemId });
     

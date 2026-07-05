@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, GraduationCap, Briefcase, Search, User, UserCheck, Heart, Sparkles, Building, Trophy, Bell, ChevronRight } from 'lucide-react';
-import { FALLBACK_EXAMS as EXAMS_MOCK, FALLBACK_SCHEMES as SCHEMES_MOCK, FALLBACK_SCHOLARSHIPS as SCHOLARSHIPS_MOCK, FALLBACK_DEPARTMENTS } from '@/lib/fallbackData';
+import { ArrowRight, BookOpen, GraduationCap, Briefcase, Search, User, UserCheck, Heart, Sparkles, Building, Trophy, Bell, ChevronRight, ShieldCheck, FileText, ArrowUpRight } from 'lucide-react';
+import { FALLBACK_EXAMS as EXAMS_MOCK, FALLBACK_SCHEMES as SCHEMES_MOCK, FALLBACK_SCHOLARSHIPS as SCHOLARSHIPS_MOCK, FALLBACK_DEPARTMENTS, Exam, Scheme, Scholarship } from '@/lib/fallbackData';
+import { api } from '@/services/api';
 
 const EDUCATION_MOCK = [
   {
@@ -44,10 +45,10 @@ const staggerContainer = {
 };
 
 export default function Home() {
-  const [trendingExams, setTrendingExams] = useState<Exam[]>([]);
-  const [latestSchemes, setLatestSchemes] = useState<Scheme[]>([]);
-  const [scholarships, setScholarships] = useState<Scholarship[]>([]);
-  const [notifications, setNotifications] = useState<Exam[]>([]);
+  const [trendingExams, setTrendingExams] = useState<any[]>([]);
+  const [latestSchemes, setLatestSchemes] = useState<any[]>([]);
+  const [scholarships, setScholarships] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [stats, setStats] = useState({ examsCount: 0, schemesCount: 0, scholarshipsCount: 0, usersCount: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -57,7 +58,7 @@ export default function Home() {
         const [examsData, schemesData, scholarshipsData, notificationsData, statsData] = await Promise.all([
           api.getTrendingExams(3),
           api.getLatestSchemes(3),
-          api.getScholarships(undefined, undefined, 0, 3),
+          api.getScholarships(undefined, undefined, undefined, 0, 3),
           api.getLatestNotifications(5),
           api.getStatistics()
         ]);

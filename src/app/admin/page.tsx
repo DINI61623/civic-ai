@@ -12,7 +12,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function checkAdmin() {
       try {
-        const profile = await api.getUserProfile();
+        const profile = await api.getUserProfile() as any;
         if (profile?.role === 'admin') {
           setIsAdmin(true);
         } else {
