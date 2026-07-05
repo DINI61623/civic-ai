@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { MapPin } from 'lucide-react';
 
 const STATES = [
@@ -12,15 +13,49 @@ const STATES = [
 ];
 
 export default function StateFilter() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [selectedState, setSelectedState] = useState("All India");
   
+  useEffect(() => {
+    const stateParam = searchParams.get('state');
+    if (stateParam && STATES.includes(stateParam)) {
+      setSelectedState(stateParam);
+    } else {
+      setSelectedState("All India");
+    }
+  }, [searchParams]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newState = e.target.value;
+    setSelectedState(newState);
+    
+    // Only redirect if we are on a list page, otherwise just go to /exams to show the filtered results
+    const isListPage = ['/exams', '/schemes', '/scholarships', '/education'].some(route => pathname.startsWith(route));
+    
+    const params = new URLSearchParams(searchParams.toString());
+    if (newState === "All India") {
+      params.delete('state');
+    } else {
+      params.set('state', newState);
+    }
+
+    if (isListPage) {
+      router.push(`${pathname}?${params.toString()}`);
+    } else {
+      // If on homepage or details page, default to routing to schemes (or keep it contextual)
+      router.push(`/schemes?${params.toString()}`);
+    }
+  };
+
   return (
     <div className="flex items-center gap-1.5 relative bg-slate-50 rounded-2xl px-3 py-2 border border-slate-200">
       <MapPin className="h-3.5 w-3.5 text-primary" />
       <select 
         value={selectedState}
-        onChange={(e) => setSelectedState(e.target.value)}
-        className="appearance-none bg-transparent text-sm font-medium pr-5 outline-none cursor-pointer text-slate-700 dark:text-slate-300 hover:text-primary transition-colors"
+        onChange={handleChange}
+        className="appearance-none bg-transparent text-sm font-medium pr-5 outline-none cursor-pointer text-slate-700 hover:text-primary transition-colors"
       >
         {STATES.map((state) => (
           <option key={state} value={state}>{state}</option>

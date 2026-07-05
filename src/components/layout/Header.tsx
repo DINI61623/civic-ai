@@ -17,7 +17,7 @@ export default function Header() {
     { name: 'Schemes', href: '/schemes' },
     { name: 'Scholarships', href: '/scholarships' },
     { name: 'Higher Ed', href: '/education' },
-    { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Resources', href: '/resources' },
   ];
 
   const closeMenu = () => setIsMobileMenuOpen(false);
