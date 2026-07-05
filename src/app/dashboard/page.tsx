@@ -21,7 +21,7 @@ export default function DashboardPage() {
           </div>
           <div>
             <h1 className="text-3xl font-extrabold text-foreground tracking-tight mb-1">Good morning, Anjali</h1>
-            <p className="text-foreground-muted">Here's your personal opportunity overview for today.</p>
+            <p className="text-foreground-muted">Here&apos;s your personal opportunity overview for today.</p>
           </div>
         </div>
         <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl flex items-center gap-4">
@@ -79,21 +79,21 @@ export default function DashboardPage() {
                 { id: 1, type: 'Exam', title: 'UPSC Civil Services Examination (CSE) 2026', tag: 'All India', date: 'Closes Mar 5' },
                 { id: 2, type: 'Scheme', title: 'PM Kisan Samman Nidhi', tag: 'Farmers', date: 'Always Open' },
                 { id: 3, type: 'Scholarship', title: 'National Means Cum Merit Scholarship', tag: 'Central', date: 'Closes Oct 31' }
-              ].map((item, idx) => (
-                <div key={item.id} className="p-6 flex items-center justify-between group cursor-pointer hover:bg-slate-50 transition-colors">
-                  <div className="flex gap-5 items-start w-full">
-                    <div className={`text-xs font-bold px-3 py-1.5 rounded-lg shrink-0 w-24 text-center mt-0.5 ${
+              ].map((item) => (
+                <div key={item.id} className="p-4 md:p-6 flex items-center justify-between group cursor-pointer hover:bg-slate-50 transition-colors w-full">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-5 items-start sm:items-center w-full pr-4">
+                    <div className={`text-xs font-bold px-3 py-1.5 rounded-lg shrink-0 w-auto sm:w-24 text-center ${
                       item.type === 'Exam' ? 'bg-blue-50 text-blue-700' :
                       item.type === 'Scheme' ? 'bg-green-50 text-green-700' :
                       'bg-purple-50 text-purple-700'
                     }`}>
                       {item.type}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors text-lg mb-1">{item.title}</h3>
-                      <div className="flex items-center gap-3 text-sm text-foreground-muted font-medium">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors text-base md:text-lg mb-1 truncate">{item.title}</h3>
+                      <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-foreground-muted font-medium">
                         <span>{item.tag}</span>
-                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
                         <span className={item.date.includes('Closes') ? 'text-danger' : ''}>{item.date}</span>
                       </div>
                     </div>

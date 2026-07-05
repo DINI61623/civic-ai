@@ -13,7 +13,7 @@ export default function LoginPage() {
             Welcome to CivicAI
           </h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/login" className="font-medium text-primary hover:text-primary/80 transition-colors">
               Sign up today
             </Link>

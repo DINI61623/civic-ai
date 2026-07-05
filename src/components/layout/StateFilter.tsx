@@ -15,7 +15,7 @@ export default function StateFilter() {
   const [selectedState, setSelectedState] = useState("All India");
   
   return (
-    <div className="hidden md:flex items-center gap-1 relative bg-slate-50 dark:bg-slate-800 rounded-md px-2 py-1 border border-slate-200 dark:border-slate-700">
+    <div className="flex items-center gap-1.5 relative bg-slate-50 rounded-2xl px-3 py-2 border border-slate-200">
       <MapPin className="h-3.5 w-3.5 text-primary" />
       <select 
         value={selectedState}

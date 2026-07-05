@@ -3,14 +3,35 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, GraduationCap, Briefcase, Search, User, UserCheck, Heart, Sparkles, Building, Trophy, Bell, ChevronRight } from 'lucide-react';
-import { EXAMS_MOCK } from './exams/page';
-import { SCHEMES_MOCK } from './schemes/page';
-import { SCHOLARSHIPS_MOCK } from './scholarships/page';
-import { EDUCATION_MOCK } from './education/page';
+import { FALLBACK_EXAMS as EXAMS_MOCK, FALLBACK_SCHEMES as SCHEMES_MOCK, FALLBACK_SCHOLARSHIPS as SCHOLARSHIPS_MOCK, FALLBACK_DEPARTMENTS } from '@/lib/fallbackData';
+
+const EDUCATION_MOCK = [
+  {
+    id: '1',
+    name: 'National Institute of Technology (NIT)',
+    type: 'Government University',
+    details: 'Premier engineering institutes located across India.',
+    state: 'All India',
+  },
+  {
+    id: '2',
+    name: 'CUET (UG) 2026',
+    type: 'Entrance Exam',
+    details: 'Common University Entrance Test for undergraduate programs.',
+    state: 'All India',
+  },
+  {
+    id: '3',
+    name: 'Prime Minister Research Fellowship (PMRF)',
+    type: 'Fellowship',
+    details: 'Prestigious fellowship for PhD programs in premier institutes.',
+    state: 'All India',
+  }
+];
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } }
 };
 
 const staggerContainer = {
@@ -31,12 +52,12 @@ export default function Home() {
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <motion.div 
           animate={{ scale: [1, 1.1, 1], rotate: [0, 5, 0] }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" as const }}
           className="absolute top-0 right-10 w-96 h-96 bg-secondary/30 rounded-full blur-[100px]" 
         />
         <motion.div 
           animate={{ scale: [1, 1.2, 1], rotate: [0, -5, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" as const }}
           className="absolute bottom-0 left-10 w-80 h-80 bg-accent/20 rounded-full blur-[100px]" 
         />
 
@@ -52,7 +73,7 @@ export default function Home() {
             </motion.div>
             
             <motion.h1 variants={fadeUp} className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight mb-6 leading-[1.1]">
-              India's AI-Powered <br className="hidden md:block" />
+              India&apos;s AI-Powered <br className="hidden md:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-emerald-200">
                 Citizen Assistant
               </span>
@@ -146,27 +167,30 @@ export default function Home() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {EXAMS_MOCK.map((exam) => (
-              <div key={exam.id} className="bg-card border border-border rounded-2xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
-                <div className="mb-5">
-                  <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">{exam.department}</span>
-                </div>
-                <h3 className="text-xl font-bold text-foreground mb-3">{exam.name}</h3>
-                <p className="text-sm text-foreground-muted mb-8 flex-1">Qualification: <span className="font-medium text-foreground">{exam.eligibility}</span></p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {EXAMS_MOCK.map((exam) => {
+              const dept = FALLBACK_DEPARTMENTS.find(d => d.id === exam.department_id);
+              const deptName = dept ? dept.name.split(' (')[0] : 'Govt Department';
+              return (
+                <div key={exam.id} className="bg-card border border-border rounded-2xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+                  <div className="mb-5">
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">{deptName}</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-3">{exam.title}</h3>
+                  <p className="text-sm text-foreground-muted mb-8 flex-1">Qualification: <span className="font-medium text-foreground">{exam.eligibility}</span></p>
                 
                 <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                   <div className="text-sm">
                     <span className="text-foreground-muted block mb-0.5 text-xs">Closing Date</span>
-                    <span className="font-semibold text-danger">{exam.lastDate}</span>
+                    <span className="font-semibold text-danger">{exam.last_date}</span>
                   </div>
                   <Link href={`/exams/${exam.id}`} className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 px-5 py-2.5 rounded-lg transition-colors shadow-sm">
                     Apply Now
                   </Link>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       </section>
@@ -188,7 +212,7 @@ export default function Home() {
                 {SCHEMES_MOCK.slice(0, 3).map((scheme) => (
                   <Link key={scheme.id} href={`/schemes/${scheme.id}`} className="block bg-card border border-border p-5 rounded-2xl hover:border-primary/30 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all group">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{scheme.name}</h3>
+                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{scheme.title}</h3>
                       <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md font-semibold">{scheme.category}</span>
                     </div>
                     <p className="text-sm text-foreground-muted truncate">{scheme.benefits}</p>
@@ -209,12 +233,12 @@ export default function Home() {
                 {SCHOLARSHIPS_MOCK.slice(0, 3).map((scholarship) => (
                   <Link key={scholarship.id} href={`/scholarships/${scholarship.id}`} className="block bg-card border border-border p-5 rounded-2xl hover:border-primary/30 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all group">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{scholarship.name}</h3>
+                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{scholarship.title}</h3>
                       <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md font-semibold">{scholarship.type}</span>
                     </div>
                     <div className="flex justify-between items-center mt-3">
                       <p className="text-sm text-foreground-muted truncate flex-1 pr-4">{scholarship.eligibility}</p>
-                      <span className="text-xs font-semibold text-danger bg-danger/10 px-2 py-1 rounded-md shrink-0">By: {scholarship.lastDate}</span>
+                      <span className="text-xs font-semibold text-danger bg-danger/10 px-2 py-1 rounded-md shrink-0">By: {scholarship.last_date}</span>
                     </div>
                   </Link>
                 ))}
@@ -233,7 +257,7 @@ export default function Home() {
             <p className="text-foreground-muted">Premier institutes, exams, and fellowships</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {EDUCATION_MOCK.map((ed) => (
               <div key={ed.id} className="bg-card border border-border p-8 rounded-2xl text-center shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all">
                 <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-secondary text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-primary/20">

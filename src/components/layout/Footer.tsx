@@ -12,7 +12,7 @@ export default function Footer() {
               <span className="text-xl font-bold text-primary">CivicAI</span>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              India's AI-Powered Citizen Assistance Platform. Helping you discover government opportunities and public services with ease.
+              India&apos;s AI-Powered Citizen Assistance Platform. Helping you discover government opportunities and public services with ease.
             </p>
           </div>
           
