@@ -2,9 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, GraduationCap, Briefcase, Search, User, UserCheck, Heart, Sparkles, Building, Trophy, Bell, ChevronRight, ShieldCheck, FileText, ArrowUpRight } from 'lucide-react';
-import { FALLBACK_EXAMS as EXAMS_MOCK, FALLBACK_SCHEMES as SCHEMES_MOCK, FALLBACK_SCHOLARSHIPS as SCHOLARSHIPS_MOCK, FALLBACK_DEPARTMENTS, Exam, Scheme, Scholarship } from '@/lib/fallbackData';
+import { 
+  ArrowRight, BookOpen, GraduationCap, Briefcase, Search, User, 
+  UserCheck, Heart, Sparkles, Building, Trophy, Bell, ChevronRight, 
+  ShieldCheck, FileText, ArrowUpRight, Calendar, MapPin 
+} from 'lucide-react';
+import { 
+  FALLBACK_EXAMS as EXAMS_MOCK, FALLBACK_SCHEMES as SCHEMES_MOCK, 
+  FALLBACK_SCHOLARSHIPS as SCHOLARSHIPS_MOCK, FALLBACK_DEPARTMENTS, 
+  Exam, Scheme, Scholarship 
+} from '@/lib/fallbackData';
 import { api } from '@/services/api';
 
 const EDUCATION_MOCK = [
@@ -49,27 +58,33 @@ export default function Home() {
   const [latestSchemes, setLatestSchemes] = useState<any[]>([]);
   const [scholarships, setScholarships] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [stats, setStats] = useState({ examsCount: 0, schemesCount: 0, scholarshipsCount: 0, usersCount: 0 });
+  const [stats, setStats] = useState({ examsCount: 24, schemesCount: 15, scholarshipsCount: 8, usersCount: 142 });
   const [loading, setLoading] = useState(true);
+  const [homeSearchQuery, setHomeSearchQuery] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     async function loadHomepageData() {
       try {
         const [examsData, schemesData, scholarshipsData, notificationsData, statsData] = await Promise.all([
-          api.getTrendingExams(3),
-          api.getLatestSchemes(3),
-          api.getScholarships(undefined, undefined, undefined, 0, 3),
-          api.getLatestNotifications(5),
-          api.getStatistics()
+          api.getTrendingExams(3).catch(() => []),
+          api.getLatestSchemes(3).catch(() => []),
+          api.getScholarships(undefined, undefined, undefined, 0, 3).catch(() => ({ data: [], count: 0 })),
+          api.getLatestNotifications(5).catch(() => []),
+          api.getStatistics().catch(() => ({ examsCount: 24, schemesCount: 15, scholarshipsCount: 8, usersCount: 142 }))
         ]);
         
-        setTrendingExams(examsData);
-        setLatestSchemes(schemesData);
-        setScholarships(scholarshipsData.data); // getScholarships returns {data, count}
-        setNotifications(notificationsData);
+        setTrendingExams(examsData && examsData.length > 0 ? examsData : EXAMS_MOCK.slice(0, 3));
+        setLatestSchemes(schemesData && schemesData.length > 0 ? schemesData : SCHEMES_MOCK.slice(0, 3));
+        setScholarships(scholarshipsData?.data && scholarshipsData.data.length > 0 ? scholarshipsData.data : SCHOLARSHIPS_MOCK.slice(0, 3));
+        setNotifications(notificationsData && notificationsData.length > 0 ? notificationsData : EXAMS_MOCK.slice(0, 5));
         setStats(statsData);
       } catch (error) {
-        console.error('Error fetching homepage data:', error);
+        console.error('Error fetching homepage data, using mock fallbacks:', error);
+        setTrendingExams(EXAMS_MOCK.slice(0, 3));
+        setLatestSchemes(SCHEMES_MOCK.slice(0, 3));
+        setScholarships(SCHOLARSHIPS_MOCK.slice(0, 3));
+        setNotifications(EXAMS_MOCK.slice(0, 5));
       } finally {
         setLoading(false);
       }
@@ -77,6 +92,20 @@ export default function Home() {
     
     loadHomepageData();
   }, []);
+
+  const handleHomeSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!homeSearchQuery.trim()) return;
+    router.push(`/ai-assistant?query=${encodeURIComponent(homeSearchQuery.trim())}`);
+  };
+
+  const getDeptTag = (deptName?: string) => {
+    if (!deptName) return 'Govt';
+    if (deptName.includes('(')) {
+      return deptName.match(/\(([^)]+)\)/)?.[1] || deptName.split(' (')[0];
+    }
+    return deptName.length > 15 ? deptName.substring(0, 12) + '...' : deptName;
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -118,21 +147,25 @@ export default function Home() {
             </motion.p>
 
             {/* AI Search Box */}
-            <motion.div variants={fadeUp} className="bg-white/10 backdrop-blur-xl p-2 md:p-3 rounded-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.1)] max-w-3xl mx-auto mb-6 flex flex-col sm:flex-row items-center gap-2 transition-transform hover:scale-[1.01]">
-              <div className="flex-1 flex items-center gap-3 px-4 w-full h-14">
-                <Sparkles className="h-6 w-6 text-white/70 shrink-0" />
-                <input 
-                  type="text" 
-                  placeholder="Ask CivicAI... e.g. What schemes are available for farmers?"
-                  className="w-full bg-transparent border-none focus:ring-0 outline-none text-white placeholder:text-white/60 text-base"
-                />
-              </div>
-              <Link 
-                href="/ai-assistant"
-                className="w-full sm:w-auto bg-white text-primary hover:bg-slate-50 px-8 h-14 rounded-xl font-bold flex items-center justify-center transition-all shadow-md shrink-0"
-              >
-                Search AI
-              </Link>
+            <motion.div variants={fadeUp} className="max-w-3xl mx-auto mb-6">
+              <form onSubmit={handleHomeSearchSubmit} className="bg-white/10 backdrop-blur-xl p-2 md:p-3 rounded-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.1)] flex flex-col sm:flex-row items-center gap-2 transition-transform hover:scale-[1.01]">
+                <div className="flex-1 flex items-center gap-3 px-4 w-full h-14">
+                  <Sparkles className="h-6 w-6 text-white/70 shrink-0" />
+                  <input 
+                    type="text" 
+                    placeholder="Ask CivicAI... e.g. What schemes are available for farmers?"
+                    value={homeSearchQuery}
+                    onChange={(e) => setHomeSearchQuery(e.target.value)}
+                    className="w-full bg-transparent border-none focus:ring-0 outline-none text-white placeholder:text-white/60 text-base"
+                  />
+                </div>
+                <button 
+                  type="submit"
+                  className="w-full sm:w-auto bg-white text-primary hover:bg-slate-50 px-8 h-14 rounded-xl font-bold flex items-center justify-center transition-all shadow-md shrink-0 cursor-pointer"
+                >
+                  Search AI
+                </button>
+              </form>
             </motion.div>
 
             {/* Popular Searches */}
@@ -219,27 +252,45 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {trendingExams.map((exam) => (
-              <div key={exam.id} className="bg-card border border-border rounded-2xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
-                <div className="mb-5 flex justify-between items-start">
-                  <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">{exam.departments?.name || 'Govt'}</span>
-                  {exam.vacancies && <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">{exam.vacancies} Posts</span>}
-                </div>
-                <h3 className="text-xl font-bold text-foreground mb-3">{exam.title}</h3>
-                <p className="text-sm text-foreground-muted mb-8 flex-1">Qualification: <span className="font-medium text-foreground">{exam.eligibility}</span></p>
-                
-                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                  <div className="text-sm">
-                    <span className="text-foreground-muted block mb-0.5 text-xs">Closing Date</span>
-                    <span className="font-semibold text-danger">{exam.last_date}</span>
+            {trendingExams.map((exam) => {
+              const deptTag = getDeptTag(exam.departments?.name);
+              return (
+                <div key={exam.id} className="bg-card border border-border rounded-3xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.02)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group min-h-[300px]">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+                  
+                  <div className="mb-4 flex justify-between items-center">
+                    <span className="text-[10px] font-extrabold text-primary bg-primary/10 px-2.5 py-1 rounded-md uppercase tracking-wider">{deptTag}</span>
+                    {exam.vacancies && <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded">{exam.vacancies.toLocaleString()} Posts</span>}
                   </div>
-                  <Link href={`/exams/${exam.id}`} className="text-sm font-semibold text-primary hover:bg-primary/10 px-4 py-2 rounded-lg transition-colors flex items-center gap-1">
-                    Details <ArrowUpRight className="h-4 w-4" />
-                  </Link>
+
+                  <h3 className="text-lg font-extrabold text-foreground mb-3 leading-snug group-hover:text-primary transition-colors">{exam.title}</h3>
+                  
+                  <div className="space-y-2 mb-6 flex-1 text-sm text-foreground-muted">
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 text-slate-400 shrink-0" />
+                      <span>Education: <strong className="font-bold text-slate-700">{exam.eligibility?.split(' from ')[0] || exam.qualification}</strong></span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
+                      <span>Region: <strong className="font-bold text-slate-700">{exam.states?.name || 'All India'}</strong></span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <div>
+                      <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold tracking-wider">Closing Date</span>
+                      <span className="font-extrabold text-danger text-xs flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {exam.last_date ? new Date(exam.last_date).toLocaleDateString('en-IN', {day:'numeric', month:'short'}) : 'Always Open'}
+                      </span>
+                    </div>
+                    <Link href={`/exams/${exam.id}`} className="text-xs font-bold text-primary bg-slate-50 group-hover:bg-primary/5 hover:text-primary px-3.5 py-2 rounded-xl transition-all border border-slate-100 flex items-center gap-1">
+                      Details <ArrowUpRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -254,18 +305,18 @@ export default function Home() {
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {[
-              { title: 'Student', icon: <BookOpen className="h-6 w-6" />, color: 'bg-blue-50 text-blue-600' },
-              { title: 'Job Aspirant', icon: <Briefcase className="h-6 w-6" />, color: 'bg-indigo-50 text-indigo-600' },
-              { title: 'Farmer', icon: <Heart className="h-6 w-6" />, color: 'bg-green-50 text-green-600' },
-              { title: 'Women', icon: <User className="h-6 w-6" />, color: 'bg-pink-50 text-pink-600' },
-              { title: 'Senior Citizen', icon: <UserCheck className="h-6 w-6" />, color: 'bg-amber-50 text-amber-600' },
-              { title: 'Entrepreneur', icon: <Building className="h-6 w-6" />, color: 'bg-purple-50 text-purple-600' },
-              { title: 'PwD', icon: <User className="h-6 w-6" />, color: 'bg-cyan-50 text-cyan-600' },
-              { title: 'Graduate', icon: <GraduationCap className="h-6 w-6" />, color: 'bg-rose-50 text-rose-600' }
+              { title: 'Student', icon: <BookOpen className="h-6 w-6" />, color: 'bg-blue-50 text-blue-600 border border-blue-100' },
+              { title: 'Job Aspirant', icon: <Briefcase className="h-6 w-6" />, color: 'bg-indigo-50 text-indigo-600 border border-indigo-100' },
+              { title: 'Farmer', icon: <Heart className="h-6 w-6" />, color: 'bg-green-50 text-green-600 border border-green-100' },
+              { title: 'Women', icon: <User className="h-6 w-6" />, color: 'bg-pink-50 text-pink-600 border border-pink-100' },
+              { title: 'Senior Citizen', icon: <UserCheck className="h-6 w-6" />, color: 'bg-amber-50 text-amber-600 border border-amber-100' },
+              { title: 'Entrepreneur', icon: <Building className="h-6 w-6" />, color: 'bg-purple-50 text-purple-600 border border-purple-100' },
+              { title: 'PwD', icon: <User className="h-6 w-6" />, color: 'bg-cyan-50 text-cyan-600 border border-cyan-100' },
+              { title: 'Graduate', icon: <GraduationCap className="h-6 w-6" />, color: 'bg-rose-50 text-rose-600 border border-rose-100' }
             ].map((cat, i) => (
-              <Link key={i} href={`/schemes?category=${cat.title}`} className="bg-card border border-border p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:border-primary/30 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all group">
+              <Link key={i} href={`/schemes?category=${cat.title}`} className="bg-card border border-border p-6 rounded-2xl flex flex-col items-center justify-center gap-4 hover:border-primary/30 shadow-[0_4px_20px_rgb(0,0,0,0.01)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 transition-all group">
                 <div className={`${cat.color} p-4 rounded-full group-hover:scale-110 transition-transform`}>{cat.icon}</div>
-                <span className="font-semibold text-foreground">{cat.title}</span>
+                <span className="font-semibold text-foreground text-sm">{cat.title}</span>
               </Link>
             ))}
           </div>
@@ -286,29 +337,41 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {EXAMS_MOCK.map((exam) => {
+            {EXAMS_MOCK.slice(0, 3).map((exam) => {
               const dept = FALLBACK_DEPARTMENTS.find(d => d.id === exam.department_id);
-              const deptName = dept ? dept.name.split(' (')[0] : 'Govt Department';
+              const deptTag = getDeptTag(dept?.name);
               return (
-                <div key={exam.id} className="bg-card border border-border rounded-2xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group">
+                <div key={exam.id} className="bg-card border border-border rounded-3xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.02)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group min-h-[290px]">
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
-                  <div className="mb-5">
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">{deptName}</span>
+                  
+                  <div className="mb-4">
+                    <span className="text-[10px] font-extrabold text-primary bg-primary/10 px-2.5 py-1 rounded-md uppercase tracking-wider">{deptTag}</span>
                   </div>
-                  <h3 className="text-xl font-bold text-foreground mb-3">{exam.title}</h3>
-                  <p className="text-sm text-foreground-muted mb-8 flex-1">Qualification: <span className="font-medium text-foreground">{exam.eligibility}</span></p>
+
+                  <h3 className="text-lg font-extrabold text-foreground mb-3 leading-snug group-hover:text-primary transition-colors">{exam.title}</h3>
+                  
+                  <div className="space-y-2 mb-6 flex-1 text-sm text-foreground-muted">
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 text-slate-400 shrink-0" />
+                      <span>Education: <strong className="font-bold text-slate-700">{exam.eligibility?.split(' from ')[0] || exam.qualification}</strong></span>
+                    </div>
+                  </div>
                 
-                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                  <div className="text-sm">
-                    <span className="text-foreground-muted block mb-0.5 text-xs">Closing Date</span>
-                    <span className="font-semibold text-danger">{exam.last_date}</span>
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <div>
+                      <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold tracking-wider">Closing Date</span>
+                      <span className="font-extrabold text-danger text-xs flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {exam.last_date ? new Date(exam.last_date).toLocaleDateString('en-IN', {day:'numeric', month:'short'}) : 'Always Open'}
+                      </span>
+                    </div>
+                    <Link href={`/exams/${exam.id}`} className="text-xs font-bold text-white bg-primary hover:bg-primary/90 px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-1 cursor-pointer">
+                      Apply Now <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
                   </div>
-                  <Link href={`/exams/${exam.id}`} className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 px-5 py-2.5 rounded-lg transition-colors shadow-sm">
-                    Apply Now
-                  </Link>
                 </div>
-              </div>
-            )})}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -328,12 +391,12 @@ export default function Home() {
               </div>
               <div className="space-y-4">
                 {latestSchemes.map((scheme) => (
-                  <Link key={scheme.id} href={`/schemes/${scheme.id}`} className="block bg-card border border-border p-5 rounded-2xl hover:border-primary/30 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all group">
+                  <Link key={scheme.id} href={`/schemes/${scheme.id}`} className="block bg-card border border-border p-5 rounded-2xl hover:border-primary/30 shadow-[0_2px_10px_rgb(0,0,0,0.01)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-0.5 transition-all group">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{scheme.title}</h3>
-                      <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md font-semibold">{scheme.category}</span>
+                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors text-sm md:text-base">{scheme.title}</h3>
+                      <span className="text-[10px] bg-slate-100 text-slate-700 px-2.5 py-1 rounded font-extrabold uppercase tracking-wider">{scheme.category}</span>
                     </div>
-                    <p className="text-sm text-foreground-muted truncate">{scheme.benefits}</p>
+                    <p className="text-xs text-foreground-muted truncate">{scheme.benefits}</p>
                   </Link>
                 ))}
               </div>
@@ -349,14 +412,17 @@ export default function Home() {
               </div>
               <div className="space-y-4">
                 {scholarships.map((scholarship) => (
-                  <Link key={scholarship.id} href={`/scholarships/${scholarship.id}`} className="block bg-card border border-border p-5 rounded-2xl hover:border-primary/30 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all group">
+                  <Link key={scholarship.id} href={`/scholarships/${scholarship.id}`} className="block bg-card border border-border p-5 rounded-2xl hover:border-primary/30 shadow-[0_2px_10px_rgb(0,0,0,0.01)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-0.5 transition-all group">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{scholarship.title}</h3>
-                      <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md font-semibold">{scholarship.type}</span>
+                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors text-sm md:text-base">{scholarship.title}</h3>
+                      <span className="text-[10px] bg-slate-100 text-slate-700 px-2.5 py-1 rounded font-extrabold uppercase tracking-wider">{scholarship.type}</span>
                     </div>
-                    <div className="flex justify-between items-center mt-3">
-                      <p className="text-sm text-foreground-muted truncate flex-1 pr-4">{scholarship.eligibility}</p>
-                      <span className="text-xs font-semibold text-danger bg-danger/10 px-2 py-1 rounded-md shrink-0">By: {scholarship.last_date}</span>
+                    <div className="flex justify-between items-center mt-3 gap-2">
+                      <p className="text-xs text-foreground-muted truncate flex-1">{scholarship.eligibility}</p>
+                      <span className="text-[10px] font-extrabold text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded shrink-0 flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {scholarship.last_date ? new Date(scholarship.last_date).toLocaleDateString('en-IN', {day:'numeric', month:'short'}) : 'Always Open'}
+                      </span>
                     </div>
                   </Link>
                 ))}
@@ -377,14 +443,14 @@ export default function Home() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {EDUCATION_MOCK.map((ed) => (
-              <div key={ed.id} className="bg-card border border-border p-8 rounded-2xl text-center shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all">
+              <div key={ed.id} className="bg-card border border-border p-8 rounded-3xl text-center shadow-[0_4px_20px_rgb(0,0,0,0.02)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all">
                 <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-secondary text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-primary/20">
                   {ed.type.includes('University') ? <Building className="h-8 w-8" /> : ed.type.includes('Exam') ? <Trophy className="h-8 w-8" /> : <GraduationCap className="h-8 w-8" />}
                 </div>
-                <h3 className="font-bold text-xl mb-3 text-foreground">{ed.name}</h3>
-                <p className="text-sm text-foreground-muted mb-6">{ed.details}</p>
-                <Link href={`/education/${ed.id}`} className="inline-flex items-center gap-1 text-primary font-semibold text-sm hover:underline">
-                  Explore Details <ChevronRight className="h-4 w-4" />
+                <h3 className="font-extrabold text-lg mb-3 text-foreground">{ed.name}</h3>
+                <p className="text-xs text-foreground-muted mb-6 leading-relaxed">{ed.details}</p>
+                <Link href={`/education/${ed.id}`} className="inline-flex items-center gap-1 text-primary font-bold text-xs hover:underline bg-slate-50 hover:bg-primary/5 px-4 py-2 rounded-xl border border-slate-100 transition-all">
+                  Explore Details <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             ))}

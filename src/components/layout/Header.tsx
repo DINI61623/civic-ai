@@ -100,22 +100,22 @@ export default function Header() {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop with higher z-index to clear page overlays */}
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.5 }}
               exit={{ opacity: 0 }}
               onClick={closeMenu}
-              className="fixed inset-0 bg-black z-50 lg:hidden"
+              className="fixed inset-0 bg-black/60 z-[100] lg:hidden backdrop-blur-xs"
             />
 
-            {/* Sliding Menu Sheet */}
+            {/* Sliding Menu Sheet - Left Aligned with z-[110] */}
             <motion.div 
-              initial={{ x: '100%' }}
+              initial={{ x: '-100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="fixed right-0 top-0 bottom-0 w-[280px] sm:w-[320px] bg-white z-50 border-l border-slate-200 p-6 flex flex-col justify-between shadow-2xl lg:hidden"
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+              className="fixed left-0 top-0 bottom-0 w-[280px] sm:w-[320px] bg-white z-[110] border-r border-slate-200 p-6 flex flex-col justify-between shadow-2xl lg:hidden overflow-y-auto"
             >
               <div className="space-y-6">
                 
@@ -125,7 +125,7 @@ export default function Header() {
                     <div className="bg-gradient-to-br from-primary to-secondary p-1 rounded-lg">
                       <Landmark className="h-4 w-4 text-white" />
                     </div>
-                    <span className="font-extrabold text-foreground tracking-tight">Navigation</span>
+                    <span className="font-extrabold text-foreground tracking-tight">Navigation Menu</span>
                   </div>
                   <button 
                     onClick={closeMenu}

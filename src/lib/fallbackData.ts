@@ -307,6 +307,66 @@ export const FALLBACK_EXAMS: Exam[] = [
       { name: "AP History and Economy Reference", url: "https://psc.ap.gov.in" },
       { name: "APPSC Official Syllabus PDF", url: "https://psc.ap.gov.in" }
     ]
+  },
+  {
+    id: "ae5fd35a-dd1b-4c21-bf05-8b083b8a2d83",
+    title: "SSC Junior Engineer (JE) 2026",
+    description: "Recruitment of Junior Engineers (JE) Group B Non-Gazetted in Civil, Mechanical, and Electrical branches for various ministries of Government of India.",
+    eligibility: "Degree or Diploma in Civil, Electrical or Mechanical Engineering from a recognized university or board.",
+    qualification: "Diploma",
+    age_limit: "18-30 Years",
+    state_id: "187b6a43-0abd-45b5-a2d3-506743532d80",
+    department_id: "4e939c97-0d05-4eb6-8688-d2f371521543",
+    start_date: "2026-03-20",
+    last_date: "2026-04-18",
+    official_website: "https://ssc.gov.in",
+    notification_url: "https://ssc.gov.in",
+    apply_link: "https://ssc.gov.in",
+    salary: "₹35,400 - ₹1,12,400 (Level 6 of 7th CPC)",
+    vacancies: 968,
+    category: "Technical SSC",
+    selection_process: "Computer Based Examination (Paper-I & Paper-II) followed by document verification.",
+    exam_pattern: "Paper-I (Objective MCQ): General Intelligence (50 marks), General Awareness (50 marks), General Engineering branch specific (100 marks). Paper-II (Computer Based Exam): branch specific (300 marks).",
+    syllabus_link: "https://ssc.gov.in",
+    previous_papers_link: "https://ssc.gov.in",
+    notification_date: "2026-03-20",
+    detailed_selection_process: "1. Paper I: Computer Based Examination (Objective MCQ).\n2. Paper II: Computer Based Examination (Objective MCQ, higher difficulty).\n3. Document Verification and Departmental Allotment based on combined merit.",
+    detailed_exam_pattern: "• Paper I: 200 Questions, 2 Hours. Section A (General Intelligence & Reasoning), Section B (General Awareness), Section C (General Engineering).\n• Paper II: 100 Questions, 2 Hours. Complete discipline-specific technical section.",
+    required_documents: ["Engineering Degree/Diploma Certificate", "10th and 12th Marks Memo", "Caste Certificate (if applicable)", "Aadhaar Card"],
+    preparation_resources: [
+      { name: "SSC JE Technical Handbook", url: "https://ssc.gov.in" },
+      { name: "General Engineering Sample Practice Set", url: "https://ssc.gov.in" }
+    ]
+  },
+  {
+    id: "ae5fd35a-dd1b-4c21-bf05-8b083b8a2d84",
+    title: "RRB Assistant Loco Pilot (ALP) 2026",
+    description: "Recruitment for selecting Assistant Loco Pilots (ALP) to drive trains across different zones of Indian Railways.",
+    eligibility: "10th Pass plus ITI, or Diploma / Degree in Mechanical, Electrical, Electronics, or Automobile Engineering.",
+    qualification: "Diploma",
+    age_limit: "18-30 Years",
+    state_id: "187b6a43-0abd-45b5-a2d3-506743532d80",
+    department_id: "9e166d47-1a66-4a4d-9b1f-10c899c5ea70",
+    start_date: "2026-01-20",
+    last_date: "2026-02-19",
+    official_website: "https://www.rrcb.gov.in",
+    notification_url: "https://www.rrcb.gov.in",
+    apply_link: "https://www.rrcb.gov.in",
+    salary: "₹19,900 (Pay Level 2 of 7th CPC) plus allowances",
+    vacancies: 5696,
+    category: "Railways",
+    selection_process: "CBT 1, CBT 2, Computer Based Aptitude Test (CBAT), Document Verification, and Medical Examination (A1 Standard).",
+    exam_pattern: "CBT 1: 75 questions (60 mins) testing Maths, Reasoning, General Science, and GA. CBT 2: Part A (100 Qs - Maths/Reasoning/Science) and Part B (75 Qs - Trade specific qualifying 35%). CBAT: 5 battery aptitude tests.",
+    syllabus_link: "https://www.rrcb.gov.in",
+    previous_papers_link: "https://www.rrcb.gov.in",
+    notification_date: "2026-01-20",
+    detailed_selection_process: "1. CBT 1 (Screening Test).\n2. CBT 2 (Post-specific Merit List and trade evaluation).\n3. CBAT (Psychometric test for safety category).\n4. High-standard Medical Fitness Verification (A-1 visual standard).",
+    detailed_exam_pattern: "• CBT 1: 75 MCQs, 60 Mins. Negative marking 1/3.\n• CBT 2: Part A (100 MCQs, 90 mins, determines merit), Part B (75 MCQs, 60 mins, technical trade subject).\n• CBAT: Focuses on memory, spatial scans, concentration and depth perception.",
+    required_documents: ["Matriculation/Secondary certificate", "ITI certificate or Engineering Diploma/Degree", "Medical visual fitness form", "Caste validation certificate"],
+    preparation_resources: [
+      { name: "RRB ALP Trade Technical Preparation Guide", url: "https://www.rrcb.gov.in" },
+      { name: "A-1 Visual Fitness Standards", url: "https://www.rrcb.gov.in" }
+    ]
   }
 ];
 
@@ -361,18 +421,18 @@ export const FALLBACK_SCHEMES: Scheme[] = [
   },
   {
     id: "344877e2-18cc-410e-89d1-27c0949ce701",
-    title: "Rythu Bandhu Scheme",
+    title: "Telangana Rythu Bharosa Scheme",
     category: "Farmers",
-    description: "Telangana state welfare program to support farmer's investment for two crops a year by the Government of Telangana.",
-    benefits: "Financial grant of ₹10,000 per acre per year (₹5,000 per crop season) directly paid to farmers for purchasing seeds, fertilizer, and agricultural inputs.",
-    eligibility: "All landowning farmers in the state of Telangana. Tenant farmers are excluded.",
-    required_documents: "Pattadar Passbook, Aadhaar Card, Bank Account Details, Land Registration Certificate.",
+    description: "Financial assistance program by the Government of Telangana to support farmers' investment for crop cultivation, replacing the older Rythu Bandhu scheme.",
+    benefits: "Direct crop investment support of ₹15,000 per acre per year paid directly to landholders and registered tenant farmers in seasonal installments.",
+    eligibility: "All landowning farmers and registered tenant farmers in the state of Telangana.",
+    required_documents: "Pattadar Passbook, Aadhaar Card, Tenant agreement (if applicable), Bank Account details linked to Aadhaar.",
     state_id: "5ef1a38a-2139-47c7-bf43-dbe003fc714b",
     department_id: null,
-    official_website: "http://rythubandhu.telangana.gov.in",
-    apply_link: "http://rythubandhu.telangana.gov.in",
+    official_website: "https://telangana.gov.in",
+    apply_link: "https://telangana.gov.in",
     ministry: "Department of Agriculture, Telangana",
-    application_start_date: "2018-05-10",
+    application_start_date: "2024-06-01",
     application_end_date: null
   },
   {
@@ -389,6 +449,38 @@ export const FALLBACK_SCHEMES: Scheme[] = [
     apply_link: "https://ysrrythubharosa.ap.gov.in",
     ministry: "Department of Agriculture, Andhra Pradesh",
     application_start_date: "2019-10-15",
+    application_end_date: null
+  },
+  {
+    id: "4c45375c-b129-4419-82f2-c297864798dc",
+    title: "PM Surya Ghar: Muft Bijli Yojana",
+    category: "General",
+    description: "A central government scheme aimed at providing free electricity to households in India by promoting solar rooftop installations.",
+    benefits: "Subsidy of up to ₹78,000 for solar rooftop systems, plus up to 300 units of free electricity per month for the household.",
+    eligibility: "All Indian households with a suitable rooftop space for solar panel installation and a valid electricity connection.",
+    required_documents: "Electricity bill (recent), Land ownership proof/rooftop permission, Aadhaar Card, Bank account details.",
+    state_id: "187b6a43-0abd-45b5-a2d3-506743532d80",
+    department_id: null,
+    official_website: "https://pmsuryaghar.gov.in",
+    apply_link: "https://pmsuryaghar.gov.in",
+    ministry: "Ministry of New and Renewable Energy",
+    application_start_date: "2024-02-15",
+    application_end_date: null
+  },
+  {
+    id: "4c45375c-b129-4419-82f2-c297864798dd",
+    title: "Lakhpati Didi Scheme",
+    category: "Women",
+    description: "A national initiative to empower women in Self-Help Groups (SHGs) to earn a sustainable income of at least ₹1 Lakh per year through technical and entrepreneurial training.",
+    benefits: "Skill training in drone operation, plumbing, tailoring, LED bulb making, along with financial interest subventions and business credit linkages.",
+    eligibility: "Women who are active members of registered Self-Help Groups (SHGs) in rural or urban areas.",
+    required_documents: "SHG membership ID, Aadhaar Card, Bank Passbook, Residence Proof.",
+    state_id: "187b6a43-0abd-45b5-a2d3-506743532d80",
+    department_id: null,
+    official_website: "https://lakhpatididi.gov.in",
+    apply_link: "https://lakhpatididi.gov.in",
+    ministry: "Ministry of Rural Development",
+    application_start_date: "2023-08-15",
     application_end_date: null
   }
 ];
@@ -432,5 +524,54 @@ export const FALLBACK_SCHOLARSHIPS: Scholarship[] = [
     apply_link: "https://navasakam.ap.gov.in",
     income_limit: "Family annual income should be less than ₹2.5 Lakhs. Landholding less than 10 acres of wet or 25 acres of dry land.",
     documents_required: "College Admission Certificate, Tuition Fee receipt, Aadhaar Card, Integrated Caste and Income Certificates, Bank Account linked to Mother's Aadhaar."
+  },
+  {
+    id: "142540bf-15ff-485e-ba1d-29c317bf5c84",
+    title: "AICTE Pragati Scholarship for Girl Students 2026",
+    type: "Central",
+    description: "An initiative by the Ministry of Education to support girls pursuing technical education (Degree or Diploma) in AICTE approved institutions.",
+    eligibility: "Girl students admitted to 1st year of Degree/Diploma course in AICTE approved institution. Max 2 girls per family. Family income < ₹8.0 LPA.",
+    last_date: "2026-11-30",
+    state_id: "187b6a43-0abd-45b5-a2d3-506743532d80",
+    official_website: "https://www.aicte-india.org",
+    apply_link: "https://scholarships.gov.in",
+    income_limit: "< ₹8.0 Lakhs Per Annum",
+    documents_required: "Aadhaar Card, Annual Income Certificate, Admission Fee Receipt, Marksheet of 10th/12th, Study Certificate."
+  }
+];
+
+export const FALLBACK_EDUCATION = [
+  {
+    id: '1',
+    name: 'National Institute of Technology (NIT)',
+    type: 'Government University',
+    details: 'Premier engineering institutes located across India offering Undergraduate, Postgraduate, and Doctorate degrees in various engineering and technology branches.',
+    state: 'All India',
+    website: 'https://www.nitcouncil.org.in',
+    admission_criteria: 'Admissions are made based on ranks secured in Joint Entrance Examination - Main (JEE Main) through JoSAA counseling.',
+    programs: 'B.Tech, M.Tech, MCA, MBA, Ph.D.',
+    facilities: 'Hostel accommodation, state-of-the-art libraries, high-performance computing centers, research laboratories, sports complexes.'
+  },
+  {
+    id: '2',
+    name: 'CUET (UG) 2026',
+    type: 'Entrance Exam',
+    details: 'Common University Entrance Test for admission to undergraduate programs in Central, State, Private, and Deemed Universities across India.',
+    state: 'All India',
+    website: 'https://cuet.samarth.ac.in',
+    admission_criteria: 'Computer-based examination testing Section IA & IB (Languages), Section II (Domain Specific Subjects), Section III (General Test).',
+    programs: 'Undergraduate degrees (BA, B.Sc, B.Com, BBA, BCA, etc.) in participating institutions.',
+    facilities: 'Exam help centers, reservations as per government norms, online mock test platforms.'
+  },
+  {
+    id: '3',
+    name: 'Prime Minister Research Fellowship (PMRF)',
+    type: 'Fellowship',
+    details: 'PMRF scheme has been designed for improving the quality of research in various higher educational institutions in the country.',
+    state: 'All India',
+    website: 'https://pmrf.in',
+    admission_criteria: 'Direct entry or Lateral entry for students who have completed or are pursuing B.Tech/M.Sc/M.Tech in IISc, IITs, NITs, IISERs, IIITs with high CGPA/GATE score.',
+    programs: 'Ph.D. fellowships in science and technology fields.',
+    facilities: 'Fellowship of ₹70,000 - ₹80,000 per month, research contingency grant of ₹2 Lakhs per year.'
   }
 ];

@@ -2,11 +2,21 @@
 import { useState } from 'react';
 import { MessageSquareText, X, Send, Bot, ShieldAlert, Sparkles, ChevronRight, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function FloatingAIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
+  const router = useRouter();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    setIsOpen(false);
+    router.push(`/ai-assistant?query=${encodeURIComponent(input.trim())}`);
+    setInput('');
+  };
 
   return (
     <>
@@ -30,7 +40,7 @@ export default function FloatingAIAssistant() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-8 right-8 w-[380px] sm:w-[420px] h-[550px] bg-card rounded-3xl shadow-[0_20px_60px_rgb(0,0,0,0.12)] border border-border flex flex-col z-50 overflow-hidden"
+            className="fixed bottom-8 right-8 w-[calc(100vw-32px)] max-w-[420px] h-[550px] bg-card rounded-3xl shadow-[0_20px_60px_rgb(0,0,0,0.12)] border border-border flex flex-col z-50 overflow-hidden"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-primary to-secondary p-5 flex justify-between items-center relative overflow-hidden">
@@ -77,8 +87,11 @@ export default function FloatingAIAssistant() {
                       key={i}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => setInput(prompt)}
-                      className="text-left text-sm bg-white border border-primary/20 hover:border-primary/50 text-primary py-2.5 px-4 rounded-xl flex items-center justify-between shadow-sm transition-colors"
+                      onClick={() => {
+                        setIsOpen(false);
+                        router.push(`/ai-assistant?query=${encodeURIComponent(prompt)}`);
+                      }}
+                      className="text-left text-sm bg-white border border-primary/20 hover:border-primary/50 text-primary py-2.5 px-4 rounded-xl flex items-center justify-between shadow-sm transition-colors cursor-pointer"
                     >
                       {prompt} <ChevronRight className="h-4 w-4 opacity-50" />
                     </motion.button>
@@ -89,7 +102,7 @@ export default function FloatingAIAssistant() {
 
             {/* Footer/Input */}
             <div className="p-4 border-t border-border bg-white">
-              <div className="flex gap-2 relative">
+              <form onSubmit={handleSubmit} className="flex gap-2 relative">
                 <input 
                   type="text" 
                   placeholder="Ask anything..." 
@@ -97,10 +110,10 @@ export default function FloatingAIAssistant() {
                   onChange={(e) => setInput(e.target.value)}
                   className="flex-1 bg-slate-100 border border-transparent focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl pl-4 pr-12 py-3 text-sm outline-none transition-all"
                 />
-                <button className="absolute right-1 top-1 bottom-1 bg-primary hover:bg-primary/90 text-white w-10 flex items-center justify-center rounded-lg shadow-sm transition-colors">
+                <button type="submit" className="absolute right-1 top-1 bottom-1 bg-primary hover:bg-primary/90 text-white w-10 flex items-center justify-center rounded-lg shadow-sm transition-colors cursor-pointer">
                   <Send className="h-4 w-4" />
                 </button>
-              </div>
+              </form>
               <div className="text-center mt-3">
                 <Link href="/ai-assistant" onClick={() => setIsOpen(false)} className="text-xs font-bold text-primary hover:underline flex items-center justify-center gap-1">
                   Open Full Screen Assistant <ArrowRight className="h-3 w-3" />
