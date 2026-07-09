@@ -14,7 +14,8 @@ import {
   Exam, Scheme, Scholarship, State, Department 
 } from '@/lib/fallbackData';
 import { 
-  ConversationFilters, parseUserQuery, filterOpportunities, getFallbackRecommendations, getAIResponseText
+  ConversationFilters, parseUserQuery, filterOpportunities, getFallbackRecommendations, getAIResponseText,
+  classifyIntent, Intent
 } from '@/lib/assistantLogic';
 
 interface Message {
@@ -174,16 +175,44 @@ function AIAssistantContent() {
     loadProfileFilters();
   }, [dbData]);
 
+  // Lock the browser page scroll while inside the full-viewport AI Assistant page
+  useEffect(() => {
+    const origHtmlOverflow = document.documentElement.style.overflow;
+    const origHtmlHeight = document.documentElement.style.height;
+    const origBodyOverflow = document.body.style.overflow;
+    const origBodyHeight = document.body.style.height;
+
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.height = '100%';
+    document.body.style.overflow = 'hidden';
+    document.body.style.height = '100%';
+
+    return () => {
+      document.documentElement.style.overflow = origHtmlOverflow;
+      document.documentElement.style.height = origHtmlHeight;
+      document.body.style.overflow = origBodyOverflow;
+      document.body.style.height = origBodyHeight;
+    };
+  }, []);
+
   // Scroll to bottom on new messages or loading state changes
   useEffect(() => {
-    if (messagesContainerRef.current) {
-      const container = messagesContainerRef.current;
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: 'smooth'
-      });
-    }
-  }, [messages.length, isLoading]);
+    const scrollToBottom = () => {
+      if (messagesContainerRef.current) {
+        const container = messagesContainerRef.current;
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    };
+
+    scrollToBottom();
+    
+    // Smooth scroll again after a short delay to account for dynamic card rendering/layout adjustments
+    const timer = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timer);
+  }, [messages, isLoading]);
 
   const submitMessage = (queryText: string) => {
     if (!queryText.trim()) return;
@@ -194,8 +223,27 @@ function AIAssistantContent() {
     setIsLoading(true);
 
     setTimeout(() => {
-      const updatedFilters = parseUserQuery(queryText, activeFilters, dbData.states);
-      setActiveFilters(updatedFilters);
+      // 1. Classify Intent
+      const intent = classifyIntent(queryText);
+
+      // 2. Clear filters if start fresh/reset requested
+      let updatedFilters = { ...activeFilters };
+      if (queryText.toLowerCase().includes('clear') || queryText.toLowerCase().includes('reset')) {
+        updatedFilters = {};
+        setActiveFilters({});
+      } else {
+        // Only parse filters if not greeting / small talk / unknown
+        if (intent !== 'greeting' && intent !== 'small_talk' && intent !== 'unknown') {
+          // Keep current category type filter if specific intent is detected
+          if (intent === 'exams') updatedFilters.type = 'exam';
+          else if (intent === 'schemes') updatedFilters.type = 'scheme';
+          else if (intent === 'scholarships') updatedFilters.type = 'scholarship';
+          else if (intent === 'education') updatedFilters.type = 'education';
+          
+          updatedFilters = parseUserQuery(queryText, updatedFilters, dbData.states);
+          setActiveFilters(updatedFilters);
+        }
+      }
 
       const filterResult = filterOpportunities(updatedFilters, dbData);
 
@@ -204,9 +252,20 @@ function AIAssistantContent() {
       let isDefenceFallback = false;
       let replyOpportunities = { exams: [], schemes: [], scholarships: [], education: [] } as any;
 
-      if (queryText.toLowerCase().includes('clear') || queryText.toLowerCase().includes('reset')) {
-        replyContent = "I have reset your profile filters. Let's start fresh! Tell me your qualification, age, or state.";
-        setActiveFilters({});
+      if (queryText.toLowerCase().includes('clear') || queryText.toLowerCase().includes('reset') || intent === 'greeting') {
+        if (intent === 'greeting') {
+          replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities, 'greeting');
+        } else {
+          replyContent = "I have reset your profile filters. Let's start fresh! Tell me your qualification, age, or state.";
+          setActiveFilters({});
+        }
+        isOpportunityFeed = false;
+      } else if (intent === 'small_talk') {
+        replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities, 'small_talk');
+        isOpportunityFeed = false;
+      } else if (intent === 'unknown') {
+        replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities, 'unknown');
+        isOpportunityFeed = false;
       } else if (filterResult.isDefenceQuery) {
         isDefenceFallback = true;
         const recommendations = getFallbackRecommendations(updatedFilters, dbData);
@@ -217,7 +276,7 @@ function AIAssistantContent() {
           education: []
         };
         const count = recommendations.length;
-        replyContent = getAIResponseText(queryText, updatedFilters, count, replyOpportunities);
+        replyContent = getAIResponseText(queryText, updatedFilters, count, replyOpportunities, 'eligibility');
         isOpportunityFeed = true;
       } else if (
         filterResult.exams.length === 0 && 
@@ -232,7 +291,7 @@ function AIAssistantContent() {
           scholarships: [],
           education: []
         };
-        replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities);
+        replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities, 'eligibility');
         isOpportunityFeed = true;
       } else {
         isOpportunityFeed = true;
@@ -244,7 +303,7 @@ function AIAssistantContent() {
         };
 
         const count = filterResult.exams.length + filterResult.schemes.length + filterResult.scholarships.length + filterResult.education.length;
-        replyContent = getAIResponseText(queryText, updatedFilters, count, replyOpportunities);
+        replyContent = getAIResponseText(queryText, updatedFilters, count, replyOpportunities, intent);
       }
 
       setMessages(prev => [...prev, {
@@ -256,7 +315,7 @@ function AIAssistantContent() {
         isDefenceFallback
       }]);
       setIsLoading(false);
-    }, 800);
+    }, 600);
   };
 
   // Run initial query on mount when database data is loaded
@@ -508,7 +567,7 @@ function AIAssistantContent() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full min-w-0 relative z-10">
+      <div className="flex-1 flex flex-col min-h-0 min-w-0 relative z-10">
         
         {/* Banner */}
         <div className="bg-amber-50 border-b border-amber-100/50 p-3 text-xs font-medium text-amber-700 text-center flex items-center justify-center gap-2 shrink-0">
@@ -517,7 +576,7 @@ function AIAssistantContent() {
         </div>
 
         {/* Messages Stream */}
-        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30">
+        <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6 bg-slate-50/30">
           <div className="max-w-4xl mx-auto space-y-6">
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex gap-3 w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -528,7 +587,7 @@ function AIAssistantContent() {
                 )}
                 
                 <div className={`flex flex-col gap-3 ${msg.role === 'user' ? 'max-w-[85%] sm:max-w-[75%]' : 'w-full max-w-3xl'}`}>
-                  <div className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed border ${
+                  <div className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed border break-words ${
                     msg.role === 'user' 
                       ? 'bg-primary text-white border-primary rounded-tr-sm' 
                       : 'bg-white text-slate-800 border-slate-200 rounded-tl-sm max-w-[90%] sm:max-w-[78%] self-start'
@@ -937,7 +996,7 @@ function AIAssistantContent() {
               animate={{ opacity: 0.4 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedOpportunity(null)}
-              className="fixed inset-0 bg-black z-40"
+              className="fixed inset-0 bg-black z-[90]"
             />
             
             <motion.div 
@@ -945,7 +1004,7 @@ function AIAssistantContent() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-              className="fixed right-0 top-0 bottom-0 w-full sm:w-[480px] bg-white shadow-2xl z-50 border-l border-border flex flex-col"
+              className="fixed right-0 top-0 bottom-0 w-full sm:w-[480px] bg-white shadow-2xl z-[100] border-l border-border flex flex-col"
             >
               {/* Drawer Header */}
               <div className="p-6 border-b border-border bg-slate-50 flex justify-between items-center shrink-0">

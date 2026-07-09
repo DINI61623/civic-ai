@@ -395,6 +395,82 @@ export function getFallbackRecommendations(
   }).slice(0, 2);
 }
 
+export type Intent = 'greeting' | 'small_talk' | 'exams' | 'schemes' | 'scholarships' | 'education' | 'eligibility' | 'unknown';
+
+export function classifyIntent(query: string): Intent {
+  const text = query.trim().toLowerCase();
+  if (!text) return 'greeting';
+
+  // 1. Standalone or clear Greetings
+  const greetings = [
+    'hi', 'hello', 'hey', 'good morning', 'good evening', 'good afternoon', 
+    'namaste', 'greetings', 'yo', 'hi there', 'hello there', 'start over', 'clear', 'reset'
+  ];
+  
+  // Topic keywords to avoid classifying message as greeting if user says "Hi, show me exams"
+  const targetKeywords = [
+    'exam', 'scheme', 'scholarship', 'education', 'yojana', 'job', 'recruit', 
+    'eligibility', 'eligible', 'qualify', 'qualification', 'apply', 'admission',
+    'upsc', 'ssc', 'banking', 'railway', 'defence', 'btech', 'diploma'
+  ];
+  
+  const hasTopicKeyword = targetKeywords.some(kw => text.includes(kw));
+  
+  if (greetings.includes(text) || (greetings.some(g => text.startsWith(g)) && !hasTopicKeyword)) {
+    return 'greeting';
+  }
+
+  // 2. Small Talk
+  const howAreYou = ['how are you', 'how is it going', 'how do you do', 'are you fine', 'how are u', "how's it going"];
+  const whoAreYou = ['who are you', 'what is your name', 'who created you', 'what do you do', 'what is this site', 'about you'];
+  const thanks = ['thank you', 'thanks', 'thank u', 'appreciate it', 'great help', 'awesome help', 'thanks a lot'];
+  const bye = ['bye', 'goodbye', 'see you', 'see u', 'quit', 'exit'];
+  const quickAck = ['cool', 'awesome', 'nice', 'ok', 'okay', 'sure', 'yes', 'no'];
+  
+  if (howAreYou.some(phrase => text.includes(phrase))) return 'small_talk';
+  if (whoAreYou.some(phrase => text.includes(phrase))) return 'small_talk';
+  if (thanks.some(phrase => text.includes(phrase))) return 'small_talk';
+  if (bye.some(phrase => text.includes(phrase))) return 'small_talk';
+  if (quickAck.includes(text)) return 'small_talk';
+
+  // 3. Category Specific Intents (only trigger if it has the keyword and is NOT an eligibility analysis)
+  const isEligibilityQuery = text.includes('eligible') || text.includes('eligibility') || text.includes('qualify') || text.includes('qualification') || text.includes('what can i') || text.includes('after btech') || text.includes('after graduation') || text.includes('after 12th') || text.includes('after 10th') || text.includes('after diploma') || text.includes('my age is') || text.includes('i am 22') || text.includes('years old');
+  
+  if (!isEligibilityQuery) {
+    if (text.includes('scholarship') || text.includes('scholarships') || text.includes('financial aid') || text.includes('financial assistance') || text.includes('epass') || text.includes('reimbursement') || text.includes('grant') || text.includes('grants')) {
+      return 'scholarships';
+    }
+    if (text.includes('scheme') || text.includes('schemes') || text.includes('yojana') || text.includes('yojanas') || text.includes('welfare') || text.includes('subsidy') || text.includes('subsidies') || text.includes('farmers')) {
+      return 'schemes';
+    }
+    if (text.includes('exam') || text.includes('exams') || text.includes('job') || text.includes('jobs') || text.includes('notification') || text.includes('notifications') || text.includes('recruitment') || text.includes('upsc') || text.includes('ssc') || text.includes('banking') || text.includes('railway') || text.includes('defence') || text.includes('postings')) {
+      return 'exams';
+    }
+    if (text.includes('education') || text.includes('college') || text.includes('university') || text.includes('universities') || text.includes('admission') || text.includes('admissions') || text.includes('fellowship') || text.includes('fellowships') || text.includes('entrance')) {
+      return 'education';
+    }
+  }
+
+  // 4. Eligibility queries
+  if (isEligibilityQuery) {
+    return 'eligibility';
+  }
+
+  // 5. Check if it contains general domain concepts. If not, it is unknown/off-topic.
+  const domainConcepts = [
+    'student', 'candidate', 'profile', 'state', 'age', 'category', 'general', 'sc', 'st', 'obc', 'female', 'male', 'stream', 'course',
+    'government', 'gov', 'govt', 'civil', 'post', 'vacancy', 'apply', 'portal', 'website', 'preparation', 'syllabus', 'dates', 'deadline',
+    'btech', 'graduate', 'degree', 'diploma', 'matric', '10th', '12th', 'science', 'arts', 'commerce', 'engineering'
+  ];
+  
+  const hasDomainConcept = domainConcepts.some(concept => text.includes(concept)) || hasTopicKeyword;
+  if (!hasDomainConcept) {
+    return 'unknown';
+  }
+
+  return 'eligibility'; // Default to eligibility mapping
+}
+
 export function getAIResponseText(
   query: string, 
   filters: ConversationFilters, 
@@ -404,7 +480,8 @@ export function getAIResponseText(
     schemes: Scheme[];
     scholarships: Scholarship[];
     education: any[];
-  }
+  },
+  intent: Intent = 'eligibility'
 ): string {
   const text = query.toLowerCase();
 
@@ -418,17 +495,47 @@ export function getAIResponseText(
     }
   };
 
-  // Honest fallback explainer if no matches found
+  // 1. Handle GREETING Intent
+  if (intent === 'greeting') {
+    return `### Welcome to CivicAI! 👋\n\nI am your **AI Government Career Advisor**. I specialize in matching you with official Indian government opportunities based on your personal eligibility criteria.\n\nTo find matching options, just tell me:\n• Your **highest qualification** (e.g. 10th Pass, 12th Pass, Graduate, Diploma)\n• Your **domicile state** (e.g. Telangana, Andhra Pradesh, Uttar Pradesh)\n• Any specific fields or interests (e.g. Banking, UPSC, SSC, Scholarships)\n\n*How can I guide your career path today?*`;
+  }
+
+  // 2. Handle SMALL TALK Intent
+  if (intent === 'small_talk') {
+    const isThanks = text.includes('thank') || text.includes('thanks');
+    const isHowAreYou = text.includes('how are you') || text.includes('how is it') || text.includes('how do you');
+    const isWhoAreYou = text.includes('who are you') || text.includes('what is your name') || text.includes('who created') || text.includes('what do you');
+    const isBye = text.includes('bye') || text.includes('goodbye') || text.includes('see you');
+
+    if (isThanks) {
+      return `You are very welcome! I'm glad I could help you navigate your opportunities. Let me know if you want to explore more exams, scholarships, or schemes!`;
+    }
+    if (isHowAreYou) {
+      return `I'm doing great, thank you for asking! I am ready to help you find your next career opportunity. How can I assist you today?`;
+    }
+    if (isWhoAreYou) {
+      return `I am **CivicAI**, your AI-powered citizen assistant. My goal is to help you discover verified government exams, student scholarships, welfare schemes, and higher education paths that match your age, domicile state, and academic background.`;
+    }
+    if (isBye) {
+      return `Goodbye! I wish you the best of luck with your career and exam preparations. Feel free to come back whenever you need to match with new opportunities!`;
+    }
+    return `I am here to help you search for citizen yojanas, competitive exams, and student support. How can I help you progress today?`;
+  }
+
+  // 3. Handle UNKNOWN Intent (Off-topic filtering)
+  if (intent === 'unknown') {
+    return `### I specialize in Indian Citizen Opportunities 🇮🇳\n\nI apologize, but I am focused exclusively on helping you discover and qualify for:\n• **Government Exams** (recruitment notifications, age limits, syllabus)\n• **Scholarships** (financial assistance, post-matric support)\n• **Government Schemes** (welfare benefits, yojanas, direct benefit transfers)\n• **Higher Education** (university entrances, fellowships, PG programs)\n\nCould you please ask a question related to these topics? For example: *'What government jobs can I get after a Diploma?'* or *'Are there schemes for girls?'*`;
+  }
+
+  // 4. Honest fallback explainer if no matches found
   if (count === 0 || !opportunities || (
     opportunities.exams.length === 0 &&
     opportunities.schemes.length === 0 &&
     opportunities.scholarships.length === 0 &&
     opportunities.education.length === 0
   )) {
-    // Generate a response explaining honestly and showing the fallback recommendations
     let fallbackText = `### No Exact Match Found in Database\n\nI searched our database for opportunities matching your criteria (Qualification: **${filters.qualification || 'Any'}**, Region: **${filters.stateName || 'All India'}**, Age: **${filters.age || 'Any'}**), but **no exact matches were found**.\n\nRather than show you unverified information, I want to explain honestly: we currently do not have an exact matching entry. \n\nHowever, here is the closest verified recommendation you qualify for:\n\n`;
 
-    // Find the fallback recommendations (e.g. from the recommendations list)
     const fallbackList = opportunities?.exams && opportunities.exams.length > 0 ? opportunities.exams : [];
     if (fallbackList.length > 0) {
       const topFallback = fallbackList[0];
@@ -464,12 +571,18 @@ export function getAIResponseText(
 
   // Pre-generate response headers for core keyword requests
   let header = '';
-  if (text.includes('b.tech') || text.includes('btech') || text.includes('engineering')) {
+  if (intent === 'exams') {
+    header = `### Government Exams matching your profile\n\nI filtered our database for government recruitment notifications matching your profile (Qualification: **${filters.qualification || 'Any'}**, State: **${filters.stateName || 'All India'}**). We found **${count} matching exams**.\n\n`;
+  } else if (intent === 'schemes') {
+    header = `### Government Schemes & Welfare Yojanas\n\nI retrieved welfare schemes and yojanas you qualify for based on your domicile and category. We found **${count} matched schemes**.\n\n`;
+  } else if (intent === 'scholarships') {
+    header = `### Student Scholarship Programs\n\nHere are scholarships and student financial aids matching your qualification level. We found **${count} matched scholarships**.\n\n`;
+  } else if (intent === 'education') {
+    header = `### Higher Education & Fellowship Entries\n\nHere are higher education options, entrance tests, and fellowships matching your background. We found **${count} matched programs**.\n\n`;
+  } else if (text.includes('b.tech') || text.includes('btech') || text.includes('engineering')) {
     header = `### Opportunities for B.Tech & Engineering Candidates\n\nAs an engineering student or graduate, you qualify for both core technical posts and general administrative civil services. We found **${count} matched opportunities**.\n\n`;
   } else if (text.includes('diploma') || text.includes('polytechnic')) {
     header = `### Technical Government Jobs after Diploma\n\nDiploma holders have dedicated technical pathways in railways, central works, and defense. We found **${count} matching opportunities**.\n\n`;
-  } else if (text.includes('scholarship') || text.includes('scholarships')) {
-    header = `### Verified Scholarship Programs\n\nFinancial assistance is available from central and state departments based on academic merit, category, and household income. We found **${count} matching scholarships**.\n\n`;
   } else if (text.includes('degree') || text.includes('graduate') || text.includes('graduation')) {
     header = `### Opportunities after Graduation / Degree\n\nCompleting a degree in any field qualifies you for premium officer recruitments in civil services, banking, and staff commissions. We found **${count} matches**.\n\n`;
   } else {
