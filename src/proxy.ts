@@ -6,9 +6,15 @@ export async function proxy(request: NextRequest) {
     request,
   })
 
+  let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  if (!supabaseUrl || !supabaseUrl.startsWith('http')) {
+    supabaseUrl = 'https://placeholder-project.supabase.co';
+  }
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key',
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {

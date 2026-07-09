@@ -5,9 +5,15 @@ import { Database } from '@/types/database.types'
 export async function createClient() {
   const cookieStore = await cookies()
 
+  let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  if (!supabaseUrl || !supabaseUrl.startsWith('http')) {
+    supabaseUrl = 'https://placeholder-project.supabase.co';
+  }
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key',
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
