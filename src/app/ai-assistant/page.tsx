@@ -67,6 +67,7 @@ function AIAssistantContent() {
     departments: []
   });
 
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasTriggeredRef = useRef(false);
 
@@ -143,12 +144,46 @@ function AIAssistantContent() {
     fetchData();
   }, []);
 
-  // Strict scrolling only when a new message actually arrives
+  // Pre-seed filters from student profile on mount
   useEffect(() => {
-    if (messages.length > 1) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    async function loadProfileFilters() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        let activeProfile = null;
+        
+        if (user && user.user_metadata?.student_profile) {
+          activeProfile = user.user_metadata.student_profile;
+        } else {
+          const stored = localStorage.getItem('civicai_student_profile');
+          if (stored) activeProfile = JSON.parse(stored);
+        }
+        
+        if (activeProfile) {
+          setActiveFilters({
+            qualification: activeProfile.highestQualification || activeProfile.qualification,
+            stateName: activeProfile.stateName || activeProfile.state,
+            category: activeProfile.category || 'General',
+            interest: activeProfile.interests?.[0] as any,
+            rawQuery: ''
+          });
+        }
+      } catch (err) {
+        console.error('Failed loading profile filters inside chatbot:', err);
+      }
     }
-  }, [messages.length]);
+    loadProfileFilters();
+  }, [dbData]);
+
+  // Scroll to bottom on new messages or loading state changes
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [messages.length, isLoading]);
 
   const submitMessage = (queryText: string) => {
     if (!queryText.trim()) return;
@@ -175,14 +210,14 @@ function AIAssistantContent() {
       } else if (filterResult.isDefenceQuery) {
         isDefenceFallback = true;
         const recommendations = getFallbackRecommendations(updatedFilters, dbData);
-        const count = recommendations.length;
-        replyContent = getAIResponseText(queryText, updatedFilters, count);
         replyOpportunities = {
           exams: recommendations,
           schemes: [],
           scholarships: [],
           education: []
         };
+        const count = recommendations.length;
+        replyContent = getAIResponseText(queryText, updatedFilters, count, replyOpportunities);
         isOpportunityFeed = true;
       } else if (
         filterResult.exams.length === 0 && 
@@ -191,13 +226,13 @@ function AIAssistantContent() {
         filterResult.education.length === 0
       ) {
         const recommendations = getFallbackRecommendations(updatedFilters, dbData);
-        replyContent = `Based on your criteria (Qualification: ${updatedFilters.qualification || 'Any'}, State: ${updatedFilters.stateName || 'All India'}, Age: ${updatedFilters.age || 'Any'}), I couldn't find an exact matching opportunity in the database.\n\nHowever, here are similar premium notifications that you might be eligible for:`;
         replyOpportunities = {
           exams: recommendations,
           schemes: [],
           scholarships: [],
           education: []
         };
+        replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities);
         isOpportunityFeed = true;
       } else {
         isOpportunityFeed = true;
@@ -209,7 +244,7 @@ function AIAssistantContent() {
         };
 
         const count = filterResult.exams.length + filterResult.schemes.length + filterResult.scholarships.length + filterResult.education.length;
-        replyContent = getAIResponseText(queryText, updatedFilters, count);
+        replyContent = getAIResponseText(queryText, updatedFilters, count, replyOpportunities);
       }
 
       setMessages(prev => [...prev, {
@@ -327,7 +362,7 @@ function AIAssistantContent() {
   ];
 
   return (
-    <div className="flex-1 bg-background relative overflow-hidden flex flex-col lg:flex-row h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)]">
+    <div className="flex-1 bg-background relative overflow-hidden flex flex-col lg:flex-row h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)]">
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none"></div>
       
       {/* Mobile-only collapsed profile header banner */}
@@ -482,7 +517,7 @@ function AIAssistantContent() {
         </div>
 
         {/* Messages Stream */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30">
           <div className="max-w-4xl mx-auto space-y-6">
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex gap-3 w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -492,11 +527,11 @@ function AIAssistantContent() {
                   </div>
                 )}
                 
-                <div className={`flex flex-col gap-3 max-w-[85%] sm:max-w-[75%]`}>
+                <div className={`flex flex-col gap-3 ${msg.role === 'user' ? 'max-w-[85%] sm:max-w-[75%]' : 'w-full max-w-3xl'}`}>
                   <div className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed border ${
                     msg.role === 'user' 
                       ? 'bg-primary text-white border-primary rounded-tr-sm' 
-                      : 'bg-white text-slate-800 border-slate-200 rounded-tl-sm'
+                      : 'bg-white text-slate-800 border-slate-200 rounded-tl-sm max-w-[90%] sm:max-w-[78%] self-start'
                   }`}>
                     {msg.role === 'user' ? (
                       <p className="whitespace-pre-wrap">{msg.content}</p>

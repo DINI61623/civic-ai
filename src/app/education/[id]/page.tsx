@@ -62,8 +62,9 @@ export default function EducationDetailPage() {
         const { data: eduData, error } = await supabase.from('education').select('*').eq('id', id).single();
         
         if (eduData && !error) {
+          const eduName = eduData.title || eduData.name || '';
           const fallback = FALLBACK_EDUCATION.find(fe => 
-            fe.name.toLowerCase().split(' ')[0] === eduData.name.toLowerCase().split(' ')[0]
+            fe.name.toLowerCase().split(' ')[0] === eduName.toLowerCase().split(' ')[0]
           ) || FALLBACK_EDUCATION[0];
           
           setItem({ ...fallback, ...eduData });

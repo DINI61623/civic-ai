@@ -395,36 +395,117 @@ export function getFallbackRecommendations(
   }).slice(0, 2);
 }
 
-export function getAIResponseText(query: string, filters: ConversationFilters, count: number): string {
+export function getAIResponseText(
+  query: string, 
+  filters: ConversationFilters, 
+  count: number,
+  opportunities?: {
+    exams: Exam[];
+    schemes: Scheme[];
+    scholarships: Scholarship[];
+    education: any[];
+  }
+): string {
   const text = query.toLowerCase();
-  
-  if (text.includes('b.tech') || text.includes('btech') || text.includes('engineering') || text.includes('i\'m a b.tech') || text.includes('i am a b.tech')) {
-    return `### Opportunities for B.Tech & Engineering Candidates\n\nAs a B.Tech / Engineering student or graduate, you are eligible for both core technical recruitments and general administrative officer posts:\n\n• **Core Engineering Jobs (SSC JE, RRB ALP, PSUs)**: Dedicated recruitments for Civil, Mechanical, and Electrical disciplines.\n• **UPSC Civil Services (CSE)**: Engineers have a strong track record here and can choose science/engineering optionals.\n• **Prestigious Fellowships**: You are eligible for research programs like the Prime Minister Research Fellowship (PMRF).\n• **Technical Scholarships**: AICTE Pragati Scholarship provides up to ₹50,000/year to female engineering students.\n\nHere are **${count} matched opportunities** from our database:`;
-  }
-  
-  if (text.includes('upsc after') || text.includes('upsc and engineering') || text.includes('upsc for engineer')) {
-    return `### UPSC Guidance for Engineering Graduates\n\nEngineering graduates constitute a significant percentage of successful Civil Services candidates due to their structured analytical background:\n\n• **UPSC Civil Services (CSE)**: You are fully eligible. Popular optional subjects include Mathematics, Physics, or engineering options (Civil, Electrical, Mechanical).\n• **UPSC Engineering Services (ESE)**: Class I technocrat officer recruitments in public sectors.\n• **Preparation Timeline**: Notifications usually release in Feb/March, with the Prelims exam in May/June.\n\nHere are the relevant UPSC and graduate officer listings:`;
+
+  // Helper to format dates
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return 'Always Open / Ongoing';
+    try {
+      return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Honest fallback explainer if no matches found
+  if (count === 0 || !opportunities || (
+    opportunities.exams.length === 0 &&
+    opportunities.schemes.length === 0 &&
+    opportunities.scholarships.length === 0 &&
+    opportunities.education.length === 0
+  )) {
+    // Generate a response explaining honestly and showing the fallback recommendations
+    let fallbackText = `### No Exact Match Found in Database\n\nI searched our database for opportunities matching your criteria (Qualification: **${filters.qualification || 'Any'}**, Region: **${filters.stateName || 'All India'}**, Age: **${filters.age || 'Any'}**), but **no exact matches were found**.\n\nRather than show you unverified information, I want to explain honestly: we currently do not have an exact matching entry. \n\nHowever, here is the closest verified recommendation you qualify for:\n\n`;
+
+    // Find the fallback recommendations (e.g. from the recommendations list)
+    const fallbackList = opportunities?.exams && opportunities.exams.length > 0 ? opportunities.exams : [];
+    if (fallbackList.length > 0) {
+      const topFallback = fallbackList[0];
+      fallbackText += `#### Recommended: **${topFallback.title}**\n\n`;
+      fallbackText += `• **Summary**: ${topFallback.description || 'A premium government recruitment examination.'}\n`;
+      fallbackText += `• **Eligibility**: ${topFallback.eligibility} (Age limit: ${topFallback.age_limit})\n`;
+      fallbackText += `• **Important Dates**: Last date to apply is **${formatDate(topFallback.last_date)}**\n`;
+      fallbackText += `• **Official Website**: [${topFallback.official_website || 'Official Site'}](${topFallback.official_website})\n`;
+      fallbackText += `• **Useful Suggestions**: Since this has general graduate eligibility, preparing for its syllabus will build a strong foundation for multiple other state and central exams.`;
+    } else {
+      fallbackText += `• **Useful Suggestions**: Try searching for a broader term, or clear your profile filters to browse all options.`;
+    }
+    return fallbackText;
   }
 
-  if (text.includes('diploma') || text.includes('polytechnic')) {
-    return `### Technical Government Jobs after Diploma\n\nDiploma holders in engineering fields have dedicated technical career pathways in railway, central public works, and defense sectors:\n\n• **SSC Junior Engineer (JE)**: Technical postings in CPWD, MES, and CWC (for Civil, Electrical, Mechanical).\n• **RRB Assistant Loco Pilot (ALP)**: Safety category operations in Indian Railways.\n• **State PSC Sub-Engineer**: Technical positions in state irrigation, building, and power corporations.\n\nHere are **${count} verified career opportunities**:`;
+  // Find the top matched item to display dynamic detailed summary
+  let topItem: any = null;
+  let itemType: 'exam' | 'scheme' | 'scholarship' | 'education' = 'exam';
+
+  if (opportunities.exams && opportunities.exams.length > 0) {
+    topItem = opportunities.exams[0];
+    itemType = 'exam';
+  } else if (opportunities.schemes && opportunities.schemes.length > 0) {
+    topItem = opportunities.schemes[0];
+    itemType = 'scheme';
+  } else if (opportunities.scholarships && opportunities.scholarships.length > 0) {
+    topItem = opportunities.scholarships[0];
+    itemType = 'scholarship';
+  } else if (opportunities.education && opportunities.education.length > 0) {
+    topItem = opportunities.education[0];
+    itemType = 'education';
   }
 
-  if (text.includes('scholarship') || text.includes('scholarships')) {
-    return `### Verified Scholarship Schemes\n\nFinancial assistance is available from central and state departments based on academic merit, household income, and candidate categories:\n\n• **National Scholarship Portal (NSP)**: Portal for all central technical, post-matric, and merit-cum-means scholarships.\n• **AICTE Pragati**: Dedicated ₹50,000 per annum support for female technical students.\n• **State ePASS Reimbursements**: Direct-benefit-transfer schemes for reserved category students.\n\nHere are **${count} active scholarship programs** matching your search:`;
+  // Pre-generate response headers for core keyword requests
+  let header = '';
+  if (text.includes('b.tech') || text.includes('btech') || text.includes('engineering')) {
+    header = `### Opportunities for B.Tech & Engineering Candidates\n\nAs an engineering student or graduate, you qualify for both core technical posts and general administrative civil services. We found **${count} matched opportunities**.\n\n`;
+  } else if (text.includes('diploma') || text.includes('polytechnic')) {
+    header = `### Technical Government Jobs after Diploma\n\nDiploma holders have dedicated technical pathways in railways, central works, and defense. We found **${count} matching opportunities**.\n\n`;
+  } else if (text.includes('scholarship') || text.includes('scholarships')) {
+    header = `### Verified Scholarship Programs\n\nFinancial assistance is available from central and state departments based on academic merit, category, and household income. We found **${count} matching scholarships**.\n\n`;
+  } else if (text.includes('degree') || text.includes('graduate') || text.includes('graduation')) {
+    header = `### Opportunities after Graduation / Degree\n\nCompleting a degree in any field qualifies you for premium officer recruitments in civil services, banking, and staff commissions. We found **${count} matches**.\n\n`;
+  } else {
+    header = `### AI Career Recommendations\n\nBased on your active search and filters (Qualification: **${filters.qualification || 'Graduate'}**, Region: **${filters.stateName || 'All India'}**), I retrieved **${count} verified opportunities** from our database.\n\n`;
   }
 
-  if (text.includes('central') || text.includes('central government')) {
-    return `### Central Government Career Tracks\n\nCentral government opportunities offer national salary scales, stable promotions, and long-term benefits across the country:\n\n• **UPSC**: Class-A administrative, technical, and police service officer roles.\n• **SSC (Staff Selection Commission)**: Group B & C postings in central ministries.\n• **RRB (Railways)**: Technical and operations roles in Indian Railways.\n\nHere are **${count} central listings**:`;
+  // Add the dynamic detailed summary for the top matching item
+  if (topItem) {
+    header += `Here is a summary of the top matching option (**${topItem.title || topItem.name}**):\n\n`;
+    
+    if (itemType === 'exam') {
+      header += `• **Summary**: ${topItem.description || 'Verified government career recruitment notification.'}\n`;
+      header += `• **Eligibility**: ${topItem.eligibility} (Age limit: ${topItem.age_limit})\n`;
+      header += `• **Important Dates**: Application timeline: **${formatDate(topItem.start_date)}** to **${formatDate(topItem.last_date)}**\n`;
+      header += `• **Official Website**: [${topItem.official_website || 'Official Portal'}](${topItem.official_website})\n`;
+      header += `• **Useful Suggestions**: Download the official notification syllabus. Solve at least 5 years of previous papers, and verify your reservation details early.`;
+    } else if (itemType === 'scheme') {
+      header += `• **Summary**: ${topItem.description || 'Verified citizen welfare scheme.'}\n`;
+      header += `• **Eligibility**: ${topItem.eligibility} (Benefits: ${topItem.benefits})\n`;
+      header += `• **Important Dates**: Direct Benefit Transfer (DBT) registrations are currently open.\n`;
+      header += `• **Official Website**: [${topItem.official_website || 'Official Scheme Website'}](${topItem.official_website})\n`;
+      header += `• **Useful Suggestions**: Keep your Aadhaar linked to your bank account and mobile number, and prepare required land or category documents for hassle-free processing.`;
+    } else if (itemType === 'scholarship') {
+      header += `• **Summary**: ${topItem.description || 'Verified student scholarship program.'}\n`;
+      header += `• **Eligibility**: ${topItem.eligibility} (Income limit: ${topItem.income_limit || 'Varies'})\n`;
+      header += `• **Important Dates**: Deadline for application is **${formatDate(topItem.last_date)}**\n`;
+      header += `• **Official Website**: [${topItem.official_website || 'Scholarship Portal'}](${topItem.official_website})\n`;
+      header += `• **Useful Suggestions**: Apply early on the official portal. Make sure your previous year marks sheets are uploaded and verify your course fee receipt details.`;
+    } else if (itemType === 'education') {
+      header += `• **Summary**: ${topItem.details || 'Verified higher education program/university entry.'}\n`;
+      header += `• **Eligibility**: ${topItem.admission_criteria || 'Admission requirements vary by qualification.'}\n`;
+      header += `• **Important Dates**: Timelines are updated on the portal regularly.\n`;
+      header += `• **Official Website**: [${topItem.website || 'University/Portal Web'}](${topItem.website})\n`;
+      header += `• **Useful Suggestions**: Check previous years' cutoff scores or GATE/JEE rank requirements, and review course program details.`;
+    }
   }
 
-  if (text.includes('degree') || text.includes('graduate') || text.includes('graduation')) {
-    return `### Opportunities after Graduation / Degree\n\nCompleting a bachelor's degree in any discipline (B.A., B.Sc, B.Com, B.Tech) qualifies you for all premium officer recruitments in India:\n\n• **Civil Services (UPSC CSE, State PSCs)**: Selecting IAS, IPS, IFS, and deputy collectors.\n• **Banking Officer (IBPS PO, SBI PO)**: Officer and clerk roles in public banks.\n• **Staff Selection (SSC CGL)**: Audit officer, income tax inspector, and executive assistant roles.\n\nHere are the **${count} matched opportunities** you qualify for:`;
-  }
-
-  if (text.includes('eligible') || text.includes('eligibility')) {
-    return `### Your Dynamic Eligibility Matcher\n\nI have matched your active profile criteria against our verified opportunity database:\n\n• **Qualification**: ${filters.qualification || 'Any'}\n• **Domicile Region**: ${filters.stateName || 'All India'}\n• **Reservation Category**: ${filters.category || 'General'}\n\nHere are the **${count} verified listings** you qualify for:`;
-  }
-
-  return `### AI Career Recommendations\n\nBased on your active search and filters (Qualification: **${filters.qualification || 'Graduate'}**, Region: **${filters.stateName || 'All India'}**), I have retrieved the closest relevant matches in our database:\n\nWe found **${count} verified opportunities** matching your parameters:`;
+  return header;
 }

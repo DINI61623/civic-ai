@@ -261,6 +261,16 @@ export const api = {
     if (error) throw error;
   },
   
+  async removeSavedItem(id: string) {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('saved_items')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
+  
   async isItemSaved(itemType: string, itemId: string) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();

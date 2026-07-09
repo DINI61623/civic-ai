@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Landmark, Menu, MessageSquareText, X, ChevronRight, User } from 'lucide-react';
 import StateFilter from './StateFilter';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Header() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -18,6 +20,7 @@ export default function Header() {
     { name: 'Scholarships', href: '/scholarships' },
     { name: 'Higher Ed', href: '/education' },
     { name: 'Resources', href: '/resources' },
+    { name: 'Profile', href: '/profile' },
   ];
 
   const closeMenu = () => setIsMobileMenuOpen(false);
@@ -73,22 +76,31 @@ export default function Header() {
 
           <Link 
             href="/ai-assistant" 
-            className="hidden md:inline-flex items-center justify-center gap-2 rounded-full text-xs font-bold transition-all shadow-[0_4px_14px_0_rgba(16,185,129,0.3)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.2)] hover:-translate-y-0.5 bg-accent text-white h-[40px] px-5"
+            className="hidden md:inline-flex items-center justify-center gap-2 rounded-full text-xs font-bold transition-all shadow-[0_4px_14px_0_rgba(16,185,129,0.3)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.2)] hover:-translate-y-0.5 bg-accent text-white h-[40px] px-5 animate-pulse-once"
           >
             <MessageSquareText className="h-4 w-4" /> Ask Career AI
           </Link>
 
-          <Link 
-            href="/login" 
-            className="hidden md:inline-flex items-center justify-center rounded-full text-xs font-bold transition-all border border-slate-200 hover:bg-slate-50 text-slate-700 h-[40px] px-5"
-          >
-            Login
-          </Link>
+          {!user ? (
+            <Link 
+              href="/login" 
+              className="hidden md:inline-flex items-center justify-center rounded-full text-xs font-bold transition-all border border-slate-200 hover:bg-slate-50 text-slate-700 h-[40px] px-5"
+            >
+              Login
+            </Link>
+          ) : (
+            <Link 
+              href="/dashboard" 
+              className="hidden md:inline-flex items-center justify-center rounded-full text-xs font-bold transition-all border border-slate-200 hover:bg-slate-50 text-slate-700 h-[40px] px-5"
+            >
+              Dashboard
+            </Link>
+          )}
 
           {/* Hamburger menu button - Visible on screens < 1024px */}
           <button 
             onClick={() => setIsMobileMenuOpen(true)}
-            className="lg:hidden p-2 text-slate-500 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors focus:ring-2 focus:ring-primary/20 outline-none"
+            className="lg:hidden p-2 text-slate-500 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
             aria-label="Open Navigation Menu"
           >
             <Menu className="h-6 w-6" />
@@ -106,7 +118,7 @@ export default function Header() {
               animate={{ opacity: 0.5 }}
               exit={{ opacity: 0 }}
               onClick={closeMenu}
-              className="fixed inset-0 bg-black/60 z-[100] lg:hidden backdrop-blur-xs"
+              className="fixed inset-0 bg-black/60 z-[100] lg:hidden backdrop-blur-sm"
             />
 
             {/* Sliding Menu Sheet - Left Aligned with z-[110] */}
@@ -174,11 +186,19 @@ export default function Header() {
                     <MessageSquareText className="h-4 w-4" /> Ask Career AI
                   </button>
                 </Link>
-                <Link href="/login" onClick={closeMenu} className="block w-full">
-                  <button className="w-full border border-slate-200 text-slate-700 py-3 px-4 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 active:scale-95 transition-all cursor-pointer">
-                    <User className="h-4 w-4" /> Login Profile
-                  </button>
-                </Link>
+                {!user ? (
+                  <Link href="/login" onClick={closeMenu} className="block w-full">
+                    <button className="w-full border border-slate-200 text-slate-700 py-3 px-4 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 active:scale-95 transition-all cursor-pointer">
+                      <User className="h-4 w-4" /> Login Profile
+                    </button>
+                  </Link>
+                ) : (
+                  <Link href="/dashboard" onClick={closeMenu} className="block w-full">
+                    <button className="w-full border border-slate-200 text-slate-700 py-3 px-4 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 active:scale-95 transition-all cursor-pointer">
+                      <User className="h-4 w-4" /> My Dashboard
+                    </button>
+                  </Link>
+                )}
               </div>
             </motion.div>
           </>
