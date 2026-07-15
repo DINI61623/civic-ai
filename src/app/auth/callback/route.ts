@@ -40,6 +40,13 @@ export async function GET(request: Request) {
     )
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const hasProfile = user.user_metadata?.student_profile || user.user_metadata?.farmer_profile || user.user_metadata?.user_type;
+        if (!hasProfile) {
+          return NextResponse.redirect(`${origin}/profile-completion`)
+        }
+      }
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

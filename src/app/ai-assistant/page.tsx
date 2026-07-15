@@ -50,6 +50,12 @@ function AIAssistantContent() {
     type: 'exam' | 'scheme' | 'scholarship' | 'education';
     item: any;
   } | null>(null);
+  const [lastDiscussedOpportunity, setLastDiscussedOpportunity] = useState<any | null>(null);
+
+  const handleOpenDetails = (type: 'exam' | 'scheme' | 'scholarship' | 'education', item: any) => {
+    setSelectedOpportunity({ type, item });
+    setLastDiscussedOpportunity(item);
+  };
 
   // Cache database data
   const [dbData, setDbData] = useState<{
@@ -223,87 +229,134 @@ function AIAssistantContent() {
     setIsLoading(true);
 
     setTimeout(() => {
-      // 1. Classify Intent
-      const intent = classifyIntent(queryText);
-
-      // 2. Clear filters if start fresh/reset requested
-      let updatedFilters = { ...activeFilters };
-      if (queryText.toLowerCase().includes('clear') || queryText.toLowerCase().includes('reset')) {
-        updatedFilters = {};
-        setActiveFilters({});
-      } else {
-        // Only parse filters if not greeting / small talk / unknown
-        if (intent !== 'greeting' && intent !== 'small_talk' && intent !== 'unknown') {
-          // Keep current category type filter if specific intent is detected
-          if (intent === 'exams') updatedFilters.type = 'exam';
-          else if (intent === 'schemes') updatedFilters.type = 'scheme';
-          else if (intent === 'scholarships') updatedFilters.type = 'scholarship';
-          else if (intent === 'education') updatedFilters.type = 'education';
-          
-          updatedFilters = parseUserQuery(queryText, updatedFilters, dbData.states);
-          setActiveFilters(updatedFilters);
-        }
-      }
-
-      const filterResult = filterOpportunities(updatedFilters, dbData);
-
+      // Conversational interceptors with context awareness
+      const queryLower = queryText.toLowerCase();
       let replyContent = '';
       let isOpportunityFeed = false;
       let isDefenceFallback = false;
       let replyOpportunities = { exams: [], schemes: [], scholarships: [], education: [] } as any;
+      let updatedFilters = { ...activeFilters };
 
-      if (queryText.toLowerCase().includes('clear') || queryText.toLowerCase().includes('reset') || intent === 'greeting') {
-        if (intent === 'greeting') {
-          replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities, 'greeting');
-        } else {
-          replyContent = "I have reset your profile filters. Let's start fresh! Tell me your qualification, age, or state.";
-          setActiveFilters({});
+      const hasDocWords = /document|doc|paper|certificate|checklist/i.test(queryLower);
+      const hasApplyWords = /apply|process|how to|register|steps|link/i.test(queryLower);
+      const hasEligibleWords = /eligible|eligibility|qualified|age limit|requirements/i.test(queryLower);
+      const hasRelatedWords = /related|similar|other options|suggest/i.test(queryLower);
+
+      if (lastDiscussedOpportunity && (hasDocWords || hasApplyWords || hasEligibleWords || hasRelatedWords)) {
+        const title = lastDiscussedOpportunity.title || lastDiscussedOpportunity.name;
+        
+        if (hasDocWords) {
+          replyContent = `### Required Documents Checklist for **${title}** 📑\n\nTo apply for this opportunity, please prepare clean scanned copies of the following:\n\n1. **Aadhaar Card / Voter ID**: Required for national registry identification.\n2. **Educational Marksheets**: Graduation degree, 12th standard, or 10th matric certificates.\n3. **Domicile / Residence Certificate**: Verifies local state quota allocations.\n4. **Caste / Reservation Certificate** (if applicable): SC, ST, or OBC certificate for eligibility relaxation.\n5. **Family Income Certificate**: Necessary to qualify for income concessions and scholarships.\n6. **Recent Passport Photograph & Scanned Signature**: Keep file size under 500kb in JPEG format.\n\n*Would you like to know how to apply next?*`;
+        } else if (hasApplyWords) {
+          const portal = lastDiscussedOpportunity.official_website || lastDiscussedOpportunity.website || 'https://www.civicai.gov.in';
+          replyContent = `### Application Process for **${title}** 🌐\n\nHere are the step-by-step guidelines to register:\n\n1. **Official Portal**: Navigate to the verified government link: [Official Website Portal](${portal}).\n2. **Candidate Account**: Register as a new applicant with your email and mobile verification OTP.\n3. **Fill Profile forms**: Complete educational details, personal info, and region settings.\n4. **Upload Attachments**: Attach your scanned documents checklist copies.\n5. **Verify & Transact**: Complete any required fee transactions online (NetBanking/UPI).\n6. **Print Confirmation slip**: Save a print copy of your final registration receipt for future verification.\n\n*Let me know if you need specific help with document uploads!*`;
+        } else if (hasEligibleWords) {
+          replyContent = `### Eligibility Summary for **${title}** 🎓\n\nHere are the active criteria conditions:\n\n• **Academic Qualifications**: Candidates require **${lastDiscussedOpportunity.qualification || lastDiscussedOpportunity.eligibility || 'Varies'}**.\n• **Age Constraints**: Limits are **${lastDiscussedOpportunity.age_limit || 'Varies by reservation category'}**.\n• **Eligible States**: Restricted to residents of **${lastDiscussedOpportunity.state || 'All India'}**.\n• **Income/Demographic Targets**: Open to **${lastDiscussedOpportunity.category || 'All Citizen Categories'}**.`;
+        } else if (hasRelatedWords) {
+          // Find similar items from database
+          const type = lastDiscussedOpportunity.qualification ? 'exams' : lastDiscussedOpportunity.benefits ? 'schemes' : 'scholarships';
+          const similarList = dbData[type]
+            .filter(x => x.id !== lastDiscussedOpportunity.id)
+            .slice(0, 2);
+
+          if (similarList.length > 0) {
+            replyContent = `### Related Opportunities You May Qualify For 🌟\n\nBased on your interest in **${title}**, here are similar options:\n\n`;
+            similarList.forEach((item: any) => {
+              replyContent += `• **${item.title || item.name}**: ${item.description || item.details || 'Verified notification details.'} (Academic criteria: *${item.qualification || item.eligibility || 'Varies'}*)\n`;
+            });
+            replyContent += `\n*Would you like detailed guidelines on any of these?*`;
+          } else {
+            replyContent = `### Related Opportunities\n\nI searched our database, but we do not have other similar opportunities indexed for **${title}** right now. We ingest new notifications daily!`;
+          }
         }
-        isOpportunityFeed = false;
-      } else if (intent === 'small_talk') {
-        replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities, 'small_talk');
-        isOpportunityFeed = false;
-      } else if (intent === 'unknown') {
-        replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities, 'unknown');
-        isOpportunityFeed = false;
-      } else if (filterResult.isDefenceQuery) {
-        isDefenceFallback = true;
-        const recommendations = getFallbackRecommendations(updatedFilters, dbData);
-        replyOpportunities = {
-          exams: recommendations,
-          schemes: [],
-          scholarships: [],
-          education: []
-        };
-        const count = recommendations.length;
-        replyContent = getAIResponseText(queryText, updatedFilters, count, replyOpportunities, 'eligibility');
-        isOpportunityFeed = true;
-      } else if (
-        filterResult.exams.length === 0 && 
-        filterResult.schemes.length === 0 && 
-        filterResult.scholarships.length === 0 &&
-        filterResult.education.length === 0
-      ) {
-        const recommendations = getFallbackRecommendations(updatedFilters, dbData);
-        replyOpportunities = {
-          exams: recommendations,
-          schemes: [],
-          scholarships: [],
-          education: []
-        };
-        replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities, 'eligibility');
-        isOpportunityFeed = true;
       } else {
-        isOpportunityFeed = true;
-        replyOpportunities = {
-          exams: filterResult.exams,
-          schemes: filterResult.schemes,
-          scholarships: filterResult.scholarships,
-          education: filterResult.education
-        };
+        // Standard conversational flow and keyword query parsing
+        // Classify Intent
+        const intent = classifyIntent(queryText);
 
-        const count = filterResult.exams.length + filterResult.schemes.length + filterResult.scholarships.length + filterResult.education.length;
-        replyContent = getAIResponseText(queryText, updatedFilters, count, replyOpportunities, intent);
+        // Clear filters if start fresh/reset requested
+        if (queryText.toLowerCase().includes('clear') || queryText.toLowerCase().includes('reset')) {
+          updatedFilters = {};
+          setActiveFilters({});
+        } else {
+          // Only parse filters if not greeting / small talk / unknown
+          if (intent !== 'greeting' && intent !== 'small_talk' && intent !== 'unknown') {
+            // Keep current category type filter if specific intent is detected
+            if (intent === 'exams') updatedFilters.type = 'exam';
+            else if (intent === 'schemes') updatedFilters.type = 'scheme';
+            else if (intent === 'scholarships') updatedFilters.type = 'scholarship';
+            else if (intent === 'education') updatedFilters.type = 'education';
+            
+            updatedFilters = parseUserQuery(queryText, updatedFilters, dbData.states);
+            setActiveFilters(updatedFilters);
+          }
+        }
+
+        const filterResult = filterOpportunities(updatedFilters, dbData);
+
+        if (queryText.toLowerCase().includes('clear') || queryText.toLowerCase().includes('reset') || intent === 'greeting') {
+          if (intent === 'greeting') {
+            replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities, 'greeting');
+          } else {
+            replyContent = "I have reset your profile filters. Let's start fresh! Tell me your qualification, age, or state.";
+            setActiveFilters({});
+            setLastDiscussedOpportunity(null);
+          }
+          isOpportunityFeed = false;
+        } else if (intent === 'small_talk') {
+          replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities, 'small_talk');
+          isOpportunityFeed = false;
+        } else if (intent === 'unknown') {
+          replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities, 'unknown');
+          isOpportunityFeed = false;
+        } else if (filterResult.isDefenceQuery) {
+          isDefenceFallback = true;
+          const recommendations = getFallbackRecommendations(updatedFilters, dbData);
+          replyOpportunities = {
+            exams: recommendations,
+            schemes: [],
+            scholarships: [],
+            education: []
+          };
+          const count = recommendations.length;
+          replyContent = getAIResponseText(queryText, updatedFilters, count, replyOpportunities, 'eligibility');
+          isOpportunityFeed = true;
+
+          const topOpt = recommendations[0];
+          if (topOpt) setLastDiscussedOpportunity(topOpt);
+        } else if (
+          filterResult.exams.length === 0 && 
+          filterResult.schemes.length === 0 && 
+          filterResult.scholarships.length === 0 &&
+          filterResult.education.length === 0
+        ) {
+          const recommendations = getFallbackRecommendations(updatedFilters, dbData);
+          replyOpportunities = {
+            exams: recommendations,
+            schemes: [],
+            scholarships: [],
+            education: []
+          };
+          replyContent = getAIResponseText(queryText, updatedFilters, 0, replyOpportunities, 'eligibility');
+          isOpportunityFeed = true;
+
+          const topOpt = recommendations[0];
+          if (topOpt) setLastDiscussedOpportunity(topOpt);
+        } else {
+          isOpportunityFeed = true;
+          replyOpportunities = {
+            exams: filterResult.exams,
+            schemes: filterResult.schemes,
+            scholarships: filterResult.scholarships,
+            education: filterResult.education
+          };
+
+          const count = filterResult.exams.length + filterResult.schemes.length + filterResult.scholarships.length + filterResult.education.length;
+          replyContent = getAIResponseText(queryText, updatedFilters, count, replyOpportunities, intent);
+
+          const topOpt = filterResult.exams[0] || filterResult.schemes[0] || filterResult.scholarships[0] || filterResult.education[0];
+          if (topOpt) setLastDiscussedOpportunity(topOpt);
+        }
       }
 
       setMessages(prev => [...prev, {
@@ -315,7 +368,7 @@ function AIAssistantContent() {
         isDefenceFallback
       }]);
       setIsLoading(false);
-    }, 600);
+    }, 800);
   };
 
   // Run initial query on mount when database data is loaded
@@ -671,7 +724,7 @@ function AIAssistantContent() {
                                   </a>
                                 )}
                                 <button 
-                                  onClick={() => setSelectedOpportunity({ type: 'exam', item: exam })}
+                                  onClick={() => handleOpenDetails('exam', exam)}
                                   className="text-xs font-bold text-slate-600 hover:text-primary bg-slate-100 hover:bg-slate-200/50 py-2 px-4 rounded-xl flex items-center gap-1 transition-colors cursor-pointer"
                                 >
                                   <Info className="h-3.5 w-3.5" /> Details
@@ -754,7 +807,7 @@ function AIAssistantContent() {
                                   </a>
                                 )}
                                 <button 
-                                  onClick={() => setSelectedOpportunity({ type: 'scheme', item: scheme })}
+                                  onClick={() => handleOpenDetails('scheme', scheme)}
                                   className="text-xs font-bold text-slate-600 hover:text-emerald-600 bg-slate-100 hover:bg-slate-200/50 py-2 px-4 rounded-xl flex items-center gap-1 transition-colors cursor-pointer"
                                 >
                                   <Info className="h-3.5 w-3.5" /> Details
@@ -840,8 +893,8 @@ function AIAssistantContent() {
                                   </a>
                                 )}
                                 <button 
-                                  onClick={() => setSelectedOpportunity({ type: 'scholarship', item: scholarship })}
-                                  className="text-xs font-bold text-slate-600 hover:text-purple-600 bg-slate-100 hover:bg-slate-200/50 py-2 px-4 rounded-xl flex items-center gap-1 transition-colors cursor-pointer"
+                                  onClick={() => handleOpenDetails('scholarship', scholarship)}
+                                  className="text-xs font-bold text-slate-600 hover:text-purple-650 bg-slate-100 hover:bg-slate-200/50 py-2 px-4 rounded-xl flex items-center gap-1 transition-colors cursor-pointer"
                                 >
                                   <Info className="h-3.5 w-3.5" /> Details
                                 </button>
@@ -912,8 +965,8 @@ function AIAssistantContent() {
                                   </a>
                                 )}
                                 <button 
-                                  onClick={() => setSelectedOpportunity({ type: 'education', item: edu })}
-                                  className="text-xs font-bold text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-slate-200/50 py-2 px-4 rounded-xl flex items-center gap-1 transition-colors cursor-pointer"
+                                  onClick={() => handleOpenDetails('education', edu)}
+                                  className="text-xs font-bold text-slate-600 hover:text-indigo-650 bg-slate-100 hover:bg-slate-200/50 py-2 px-4 rounded-xl flex items-center gap-1 transition-colors cursor-pointer"
                                 >
                                   <Info className="h-3.5 w-3.5" /> Details
                                 </button>
@@ -955,16 +1008,51 @@ function AIAssistantContent() {
         {/* Input box - fixed at bottom */}
         <div className="p-6 border-t border-border bg-white relative z-10 shrink-0">
           <div className="max-w-4xl mx-auto space-y-4">
-            <div className="flex gap-2 overflow-x-auto pb-1 px-1 -mx-1 scrollbar-thin">
-              {demoPrompts.map((prompt, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSuggestionClick(prompt.text)}
-                  className="shrink-0 text-xs bg-slate-100 hover:bg-slate-200/60 border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-primary py-2 px-3.5 rounded-xl transition-all cursor-pointer font-medium"
-                >
-                  {prompt.label}
-                </button>
-              ))}
+            <div className="flex gap-2 overflow-x-auto pb-1 px-1 -mx-1 scrollbar-thin select-none">
+              {lastDiscussedOpportunity ? (
+                <>
+                  <button
+                    onClick={() => handleSuggestionClick("What documents do I need for this opportunity?")}
+                    className="shrink-0 text-xs bg-indigo-50 hover:bg-indigo-100/70 border border-indigo-100 hover:border-indigo-200 text-indigo-700 py-2 px-3.5 rounded-xl transition-all cursor-pointer font-extrabold flex items-center gap-1"
+                  >
+                    📂 Required Documents
+                  </button>
+                  <button
+                    onClick={() => handleSuggestionClick("How do I apply for this opportunity?")}
+                    className="shrink-0 text-xs bg-emerald-50 hover:bg-emerald-100/70 border border-emerald-100 hover:border-emerald-200 text-emerald-700 py-2 px-3.5 rounded-xl transition-all cursor-pointer font-extrabold flex items-center gap-1"
+                  >
+                    🌐 How to Apply
+                  </button>
+                  <button
+                    onClick={() => handleSuggestionClick("What is the exact eligibility criteria?")}
+                    className="shrink-0 text-xs bg-blue-50 hover:bg-blue-100/70 border border-blue-100 hover:border-blue-200 text-blue-750 py-2 px-3.5 rounded-xl transition-all cursor-pointer font-extrabold flex items-center gap-1"
+                  >
+                    🎓 Qualification & Age
+                  </button>
+                  <button
+                    onClick={() => handleSuggestionClick("Show similar related opportunities")}
+                    className="shrink-0 text-xs bg-purple-50 hover:bg-purple-100/70 border border-purple-100 hover:border-purple-200 text-purple-750 py-2 px-3.5 rounded-xl transition-all cursor-pointer font-extrabold flex items-center gap-1"
+                  >
+                    🌟 Similar Opportunities
+                  </button>
+                  <button
+                    onClick={() => handleSuggestionClick("reset filters")}
+                    className="shrink-0 text-xs bg-slate-100 hover:bg-slate-200/60 border border-slate-200 hover:border-slate-350 text-slate-500 py-2 px-3.5 rounded-xl transition-all cursor-pointer font-bold"
+                  >
+                    🔄 Clear
+                  </button>
+                </>
+              ) : (
+                demoPrompts.map((prompt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSuggestionClick(prompt.text)}
+                    className="shrink-0 text-xs bg-slate-100 hover:bg-slate-200/60 border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-primary py-2 px-3.5 rounded-xl transition-all cursor-pointer font-medium"
+                  >
+                    {prompt.label}
+                  </button>
+                ))
+              )}
             </div>
 
             <form onSubmit={handleSend} className="flex gap-3 relative">

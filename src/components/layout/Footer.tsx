@@ -11,7 +11,7 @@ export default function Footer() {
   return (
     <footer className="relative border-t border-slate-200/50 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md mt-auto">
       <div className="container mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
           
           {/* Column 1: Brand Profile */}
           <div className="flex flex-col space-y-4">
@@ -51,8 +51,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/resources" className="hover:text-primary transition-all duration-200 flex items-center hover:translate-x-1">
-                  Preparation Resources
+                <Link href="/schemes" className="hover:text-primary transition-all duration-200 flex items-center hover:translate-x-1">
+                  Government Schemes
                 </Link>
               </li>
               <li>
@@ -62,13 +62,42 @@ export default function Footer() {
               </li>
             </ul>
           </div>
+
+          {/* Column 3: Resources & Legal */}
+          <div className="space-y-4">
+            <h3 className="text-[10px] font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-widest">
+              Resources & Legal
+            </h3>
+            <ul className="space-y-3 text-xs font-semibold text-slate-600 dark:text-slate-400">
+              <li>
+                <Link href="/resources" className="hover:text-primary transition-all duration-200 flex items-center hover:translate-x-1">
+                  Preparation Resources
+                </Link>
+              </li>
+              <li>
+                <a href="https://civicai.in" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-all duration-200 flex items-center hover:translate-x-1">
+                  Official Website
+                </a>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-primary transition-all duration-200 flex items-center hover:translate-x-1">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-primary transition-all duration-200 flex items-center hover:translate-x-1">
+                  Terms of Service
+                </Link>
+              </li>
+            </ul>
+          </div>
           
-          {/* Column 3: Contact Info */}
+          {/* Column 4: Contact Info */}
           <div id="contact" className="space-y-4">
             <h3 className="text-[10px] font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-widest">
-              Contact
+              Contact & Platform
             </h3>
-            <div className="space-y-3.5 text-xs text-slate-600 dark:text-slate-400 font-semibold">
+            <div className="space-y-3 text-xs text-slate-600 dark:text-slate-400 font-semibold">
               <p className="text-slate-800 dark:text-slate-200 font-bold text-sm">Developer: Dinesh B</p>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
@@ -82,9 +111,9 @@ export default function Footer() {
               </div>
             </div>
             
-            <div className="pt-2">
+            <div className="flex items-center gap-3 pt-2">
               <a 
-                href="https://github.com/yourusername" 
+                href="https://github.com/dinesh-b-dev/civic-ai" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="inline-flex items-center justify-center h-10 w-10 rounded-xl bg-slate-50 hover:bg-slate-100 hover:text-primary dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-all duration-200 border border-slate-200/50 hover:border-primary/20 shadow-xs cursor-pointer"
@@ -103,6 +132,9 @@ export default function Footer() {
                   <path d="M9 18c-4.51 2-5-2-7-2" />
                 </svg>
               </a>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                Version 1.2.0-beta
+              </span>
             </div>
           </div>
           

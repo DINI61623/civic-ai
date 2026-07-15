@@ -8,7 +8,8 @@ import { api } from '@/services/api';
 import { 
   Bookmark, FileText, ArrowRight, User, Loader2, LogOut, 
   Sparkles, GraduationCap, MapPin, Mail, Calendar, Settings, 
-  Bell, BellRing, ClipboardList, Shield, Award, CheckCircle, ChevronRight, Info
+  Bell, BellRing, ClipboardList, Shield, Award, CheckCircle, ChevronRight, Info,
+  Briefcase, Heart, Building, Clock, AlertCircle, Trash2, Check, Activity
 } from 'lucide-react';
 import { 
   FALLBACK_STATES, FALLBACK_EXAMS, FALLBACK_SCHEMES, 
@@ -32,13 +33,32 @@ interface StudentProfile {
   passingYear: string;
   percentage: string;
   interests: string[];
+  dreamCareer?: string;
+  age?: number;
 }
 
 export default function Dashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [savedItems, setSavedItems] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  // Reminder Settings state
+  const [emailReminders, setEmailReminders] = useState(true);
+  const [pushReminders, setPushReminders] = useState(true);
+  const [reminderDays, setReminderDays] = useState(5);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  const [userType, setUserType] = useState<'student' | 'farmer'>('student');
+  const [farmerProfile, setFarmerProfile] = useState<any>({
+    fullName: '',
+    stateId: '',
+    stateName: '',
+    farmingType: '',
+    language: ''
+  });
 
   // Student Profile loaded from Supabase Auth Metadata / LocalStorage
   const [studentProfile, setStudentProfile] = useState<StudentProfile>({
@@ -70,28 +90,68 @@ export default function Dashboard() {
           return;
         }
 
+        setCurrentUser(user);
         const userProfile = await api.getUserProfile() as any;
         setProfile(userProfile || { email: user.email, full_name: user.user_metadata?.full_name || 'Citizen' });
 
         // Load profile from Supabase user auth metadata (secure DB storage)
-        if (user.user_metadata?.student_profile) {
-          setStudentProfile(user.user_metadata.student_profile);
-        } else {
-          // Fallback to local storage
-          const stored = localStorage.getItem('civicai_student_profile');
-          if (stored) {
-            setStudentProfile(JSON.parse(stored));
-          } else if (userProfile) {
-            setStudentProfile(prev => ({
-              ...prev,
-              fullName: userProfile.full_name || ''
-            }));
+        const metaUserType = user.user_metadata?.user_type;
+        if (!metaUserType) {
+          router.push('/profile-completion');
+          return;
+        }
+        
+        setUserType(metaUserType);
+        
+        if (metaUserType === 'farmer') {
+          if (!user.user_metadata?.farmer_profile) {
+            router.push('/profile-completion');
+            return;
           }
+          setFarmerProfile(user.user_metadata.farmer_profile);
+        } else {
+          if (!user.user_metadata?.student_profile) {
+            router.push('/profile-completion');
+            return;
+          }
+          setStudentProfile(user.user_metadata.student_profile);
         }
 
         // Fetch database bookmarks
         const items = await api.getSavedItems();
-        setSavedItems(items || []);
+        
+        // Resolve saved items titles dynamically from fallback database
+        const resolvedSavedItems = (items || []).map((savedItem: any) => {
+          let title = 'Opportunity';
+          if (savedItem.item_type === 'Exam') {
+            const match = FALLBACK_EXAMS.find(e => e.id === savedItem.item_id);
+            if (match) title = match.title;
+          } else if (savedItem.item_type === 'Scheme') {
+            const match = FALLBACK_SCHEMES.find(s => s.id === savedItem.item_id);
+            if (match) title = match.title;
+          } else if (savedItem.item_type === 'Scholarship') {
+            const match = FALLBACK_SCHOLARSHIPS.find(s => s.id === savedItem.item_id);
+            if (match) title = match.title;
+          }
+          return {
+            ...savedItem,
+            title
+          };
+        });
+
+        setSavedItems(resolvedSavedItems);
+
+        // Load Reminder Settings
+        const settings = user.user_metadata?.reminder_settings || { email: true, push: true, days: 5 };
+        setEmailReminders(settings.email);
+        setPushReminders(settings.push);
+        setReminderDays(settings.days);
+
+        // Load Recently Viewed list from localStorage
+        const storedViewed = localStorage.getItem('civicai_recently_viewed');
+        if (storedViewed) {
+          setRecentlyViewed(JSON.parse(storedViewed));
+        }
 
       } catch (error) {
         console.error('Error loading dashboard:', error);
@@ -110,119 +170,171 @@ export default function Dashboard() {
     router.refresh();
   };
 
+  const getGreeting = () => {
+    const hours = new Date().getHours();
+    if (hours >= 5 && hours < 12) return 'Good Morning';
+    if (hours >= 12 && hours < 17) return 'Good Afternoon';
+    if (hours >= 17 && hours < 22) return 'Good Evening';
+    return 'Good Night';
+  };
+
   // Calculate profile completion score percentage
   const calculateCompletion = () => {
-    let score = 0;
-    if (studentProfile.fullName) score += 10;
-    if (studentProfile.stateId) score += 10;
-    if (studentProfile.category) score += 10;
-    if (studentProfile.dob) score += 10;
-    if (studentProfile.gender) score += 10;
-    if (studentProfile.highestQualification) score += 15;
-    if (studentProfile.stream) score += 15;
-    if (studentProfile.passingYear) score += 10;
+    if (userType === 'farmer') {
+      let score = 30; // base onboarding account
+      if (farmerProfile?.stateId) score += 30;
+      if (farmerProfile?.language) score += 20;
+      if (farmerProfile?.farmingType) score += 20;
+      return Math.min(score, 100);
+    }
+    let score = 20; // base onboarding account
+    if (studentProfile.stateId) score += 20;
+    if (studentProfile.highestQualification) score += 20;
+    if (studentProfile.age) score += 20;
     if (studentProfile.interests && studentProfile.interests.length > 0) score += 10;
-    return score;
+    if (studentProfile.category) score += 5;
+    if (studentProfile.dreamCareer) score += 5;
+    return Math.min(score, 100);
+  };
+
+  // Toggle Applied state via Supabase user metadata
+  const handleToggleApplied = async (itemId: string) => {
+    if (!currentUser) return;
+    const currentApplied = currentUser.user_metadata?.applied_opportunities || [];
+    let updatedApplied = [];
+    if (currentApplied.includes(itemId)) {
+      updatedApplied = currentApplied.filter((id: string) => id !== itemId);
+    } else {
+      updatedApplied = [...currentApplied, itemId];
+    }
+    
+    const updatedUser = {
+      ...currentUser,
+      user_metadata: {
+        ...currentUser.user_metadata,
+        applied_opportunities: updatedApplied
+      }
+    };
+    setCurrentUser(updatedUser);
+
+    const supabase = createClient();
+    await supabase.auth.updateUser({
+      data: {
+        applied_opportunities: updatedApplied
+      }
+    });
+  };
+
+  // Unsave Bookmark trigger
+  const handleRemoveSaved = async (id: string, itemType: string, itemId: string) => {
+    await api.unsaveItem(itemType, itemId);
+    setSavedItems(prev => prev.filter(x => x.id !== id));
+  };
+
+  // Save reminder settings in Supabase Auth Meta
+  const handleSaveReminderSettings = async (email: boolean, push: boolean, days: number) => {
+    setIsSavingSettings(true);
+    const supabase = createClient();
+    await supabase.auth.updateUser({
+      data: {
+        reminder_settings: { email, push, days }
+      }
+    });
+    setIsSavingSettings(false);
   };
 
   // Generate dynamic, filtered recommendations based on profile criteria
   const getPersonalizedFeeds = () => {
-    const qual = studentProfile.highestQualification || 'Graduate';
+    const today = new Date('2026-07-15');
+    
+    // Mock regional arrays
+    let schemes = FALLBACK_SCHEMES;
+    let exams = FALLBACK_EXAMS;
+    let scholarships = FALLBACK_SCHOLARSHIPS;
+    let education = FALLBACK_EDUCATION;
+
+    const allIndiaId = '187b6a43-0abd-45b5-a2d3-506743532d80';
+
+    if (userType === 'farmer') {
+      const stateId = farmerProfile?.stateId;
+      if (stateId) {
+        schemes = FALLBACK_SCHEMES.filter(s => s.state_id === stateId || s.state_id === allIndiaId);
+      }
+      return {
+        schemes: schemes.slice(0, 3),
+        exams: [],
+        scholarships: [],
+        education: [],
+        recentlyAdded: schemes.slice(0, 2).map(s => ({ ...s, type: 'scheme', displayType: 'Scheme' })),
+        closingSoon: schemes.filter(s => s.application_end_date && new Date(s.application_end_date) >= today).slice(0, 2).map(s => ({
+          ...s,
+          type: 'scheme',
+          dateObj: new Date(s.application_end_date!)
+        }))
+      };
+    }
+
+    // Student Filter matches
     const stateId = studentProfile.stateId;
-    const category = studentProfile.category || 'General';
-    const interests = studentProfile.interests || [];
+    const qual = studentProfile.highestQualification;
+    const category = studentProfile.category;
 
-    // 1. Filter Exams
-    let matchedExams = FALLBACK_EXAMS.filter(exam => {
-      // Qual filter
-      if (exam.qualification !== 'Any Qualification') {
-        if (qual === '10th Pass' && exam.qualification !== '10th Pass') return false;
-        if (qual === '12th Pass' && exam.qualification !== '10th Pass' && exam.qualification !== '12th Pass') return false;
-        if (qual === 'Diploma' && exam.qualification !== '10th Pass' && exam.qualification !== '12th Pass' && exam.qualification !== 'Diploma') return false;
-      }
-      // State filter
-      if (exam.state_id && stateId && exam.state_id !== 'all_india' && exam.state_id !== stateId) return false;
+    if (stateId) {
+      exams = FALLBACK_EXAMS.filter(e => e.state_id === stateId || e.state_id === allIndiaId);
+      scholarships = FALLBACK_SCHOLARSHIPS.filter(s => s.state_id === stateId || s.state_id === allIndiaId);
+      education = FALLBACK_EDUCATION.filter(e => !e.state || e.state === 'All India' || e.state === studentProfile.stateName);
+    }
+
+    if (qual) {
+      const ranks: Record<string, number> = { '10th Pass': 1, '12th Pass': 2, 'Diploma': 3, 'Graduate': 4, 'Postgraduate': 5 };
+      const userRank = ranks[qual] || 4;
       
-      // Category/Interests match filter
-      if (interests.length > 0) {
-        const matchesInterest = interests.some(interest => {
-          if (interest === 'UPSC') return exam.title.toLowerCase().includes('upsc');
-          if (interest === 'SSC') return exam.title.toLowerCase().includes('ssc');
-          if (interest === 'Railways') return exam.title.toLowerCase().includes('railway') || exam.title.toLowerCase().includes('rrb');
-          if (interest === 'Banking') return exam.title.toLowerCase().includes('bank') || exam.title.toLowerCase().includes('ibps');
-          if (interest === 'Engineering Jobs') return exam.title.toLowerCase().includes('engineer') || exam.title.toLowerCase().includes('je') || exam.qualification === 'Diploma';
-          return true;
-        });
-        if (!matchesInterest) return false;
-      }
-      return true;
-    });
-
-    // 2. Filter Scholarships
-    let matchedScholarships = FALLBACK_SCHOLARSHIPS.filter(schol => {
-      // State filter
-      if (schol.state_id && stateId && schol.state_id !== 'all_india' && schol.state_id !== stateId) return false;
-      
-      // Qual filter
-      if (qual) {
-        if (qual === '10th Pass' && schol.eligibility.toLowerCase().includes('graduate')) return false;
-        if (qual === '12th Pass' && schol.eligibility.toLowerCase().includes('graduate')) return false;
-      }
-      return true;
-    });
-
-    // 3. Filter Schemes
-    let matchedSchemes = FALLBACK_SCHEMES.filter(scheme => {
-      // State filter
-      if (scheme.state_id && stateId && scheme.state_id !== 'all_india' && scheme.state_id !== stateId) return false;
-      
-      // Category filter
-      if (category && category !== 'General') {
-        if (scheme.category && scheme.category !== 'All' && !scheme.category.toLowerCase().includes(category.toLowerCase())) return false;
-      }
-      return true;
-    });
-
-    // 4. Filter Higher Ed
-    let matchedEdu = FALLBACK_EDUCATION.filter(edu => {
-      if (edu.state && studentProfile.stateName && edu.state !== 'All India' && edu.state.toLowerCase() !== studentProfile.stateName.toLowerCase()) return false;
-      return true;
-    });
-
-    // Dates matching (Recently Added vs Closing Soon)
-    const allItems = [
-      ...FALLBACK_EXAMS.map(e => ({ ...e, type: 'exam', displayType: 'Exam', dateObj: e.last_date ? new Date(e.last_date) : null })),
-      ...FALLBACK_SCHOLARSHIPS.map(s => ({ ...s, type: 'scholarship', displayType: 'Scholarship', dateObj: s.last_date ? new Date(s.last_date) : null })),
-      ...FALLBACK_SCHEMES.map(sc => ({ ...sc, type: 'scheme', displayType: 'Scheme', dateObj: sc.application_end_date ? new Date(sc.application_end_date) : null }))
-    ];
-
-    const closingSoon = allItems
-      .filter(i => i.dateObj && i.dateObj >= new Date())
-      .sort((a, b) => (a.dateObj!.getTime() - b.dateObj!.getTime()))
-      .slice(0, 4);
-
-    const recentlyAdded = allItems
-      .slice()
-      .reverse()
-      .slice(0, 4);
+      exams = exams.filter(e => {
+        const tr = ranks[e.qualification] || 1;
+        return userRank >= tr;
+      });
+    }
 
     return {
-      exams: matchedExams.slice(0, 3),
-      scholarships: matchedScholarships.slice(0, 3),
-      schemes: matchedSchemes.slice(0, 3),
-      education: matchedEdu.slice(0, 3),
-      closingSoon,
-      recentlyAdded
+      exams: exams.slice(0, 2),
+      scholarships: scholarships.slice(0, 2),
+      schemes: schemes.slice(0, 2),
+      education: education.slice(0, 2),
+      recentlyAdded: [...exams, ...scholarships].slice(0, 2).map((x: any) => ({
+        ...x,
+        type: x.qualification ? 'exam' : 'scholarship',
+        displayType: x.qualification ? 'Exam' : 'Scholarship'
+      })),
+      closingSoon: [...exams, ...scholarships].filter(x => x.last_date && new Date(x.last_date) >= today).slice(0, 3).map((x: any) => ({
+        ...x,
+        type: x.qualification ? 'exam' : 'scholarship',
+        dateObj: new Date(x.last_date!)
+      }))
     };
   };
 
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-32 text-center max-w-xl flex flex-col items-center justify-center gap-4 bg-background select-none">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+        <p className="text-sm text-foreground-muted font-bold">Calibrating your customized citizen workspace...</p>
+      </div>
+    );
+  }
+
   const feeds = getPersonalizedFeeds();
   const completionPercent = calculateCompletion();
+  const hasRecommendations = userType === 'farmer' 
+    ? feeds.schemes.length > 0
+    : (feeds.exams.length > 0 || feeds.scholarships.length > 0);
+
+  const appliedIds = currentUser?.user_metadata?.applied_opportunities || [];
+  const appliedOpportunities = savedItems.filter(item => appliedIds.includes(item.item_id));
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl relative">
       
-      {/* Welcome Banner Card */}
+      {/* Personalized Header Welcome Banner */}
       <div className="bg-card rounded-3xl p-8 md:p-10 border border-border shadow-[0_8px_30px_rgb(0,0,0,0.03)] mb-10 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4"></div>
         
@@ -232,243 +344,439 @@ export default function Dashboard() {
               <User className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
-                Good morning, {studentProfile.fullName || profile?.full_name?.split(' ')[0] || 'Citizen'}
+              <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
+                {getGreeting()}, {userType === 'farmer' ? (farmerProfile?.fullName || profile?.full_name?.split(' ')[0] || 'Farmer Citizen') : (studentProfile.fullName || profile?.full_name?.split(' ')[0] || 'Student Citizen')} 👋
               </h1>
-              <p className="text-foreground-muted mt-1 text-sm md:text-base font-medium">{profile?.email}</p>
+              <p className="text-foreground-muted mt-1 text-sm md:text-base font-medium">Welcome back to CivicAI.</p>
             </div>
           </div>
-          <Button variant="outline" onClick={handleSignOut} className="min-h-[40px] px-4 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer">
-            <LogOut className="h-4 w-4" /> Sign Out
-          </Button>
+          <div className="flex items-center gap-3">
+            <Link href="/compare">
+              <Button variant="outline" className="min-h-[40px] px-4 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer">
+                Compare Opportunities
+              </Button>
+            </Link>
+            <Button variant="outline" onClick={handleSignOut} className="min-h-[40px] px-4 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer">
+              <LogOut className="h-4 w-4" /> Sign Out
+            </Button>
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Left 2 Columns: Recommendations feeds */}
+        {/* Left 2 Columns: Feeds */}
         <div className="lg:col-span-2 space-y-8 min-w-0">
-          
-          {/* Eligibility Banner Info */}
-          {completionPercent < 50 ? (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 p-6 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex gap-3">
-                <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-extrabold text-amber-800 text-sm">Personalize your eligibility feeds!</h4>
-                  <p className="text-xs text-amber-600/90 leading-relaxed mt-0.5">Fill out your district, qualifying course, category, and career fields to activate automatic matching.</p>
-                </div>
-              </div>
-              <Link href="/profile" className="shrink-0">
-                <Button variant="primary" className="text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer">Complete Profile</Button>
+
+          {/* Notification Alert Center */}
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 dark:bg-slate-900/10 dark:border-slate-800 space-y-4">
+            <div className="flex justify-between items-center select-none">
+              <h2 className="text-xs font-extrabold text-foreground uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Bell className="h-4 w-4 text-primary animate-pulse" /> Notification Center
+              </h2>
+              <Link href="/notifications" className="text-[10.5px] font-bold text-primary hover:underline flex items-center gap-0.5">
+                View Inbox <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-          ) : (
-            <div className="bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/10 p-5 rounded-3xl flex items-center gap-3">
-              <Sparkles className="h-5 w-5 text-primary shrink-0 animate-pulse" />
-              <div className="text-xs font-semibold text-slate-700">
-                Feeds calibrated for Qualification: <strong className="text-primary">{studentProfile.highestQualification}</strong> • State: <strong className="text-primary">{studentProfile.stateName || 'All India'}</strong> • Category: <strong className="text-primary">{studentProfile.category}</strong>
-              </div>
-            </div>
-          )}
+            <div className="grid grid-cols-1 gap-3">
+              {/* Deadline reminders */}
+              {feeds.closingSoon.length > 0 && (
+                <div className="bg-rose-50 border border-rose-100/60 p-4 rounded-2xl flex items-start gap-3 dark:bg-rose-955/20 dark:border-rose-900/30">
+                  <Clock className="h-4.5 w-4.5 text-rose-505 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs font-bold text-rose-800 dark:text-rose-455">Deadline Reminder</h4>
+                    <p className="text-[11px] text-rose-600 dark:text-rose-500 leading-normal mt-0.5">
+                      Opportunities are closing soon! Keep track of your documents checklist for <strong>{feeds.closingSoon[0].title}</strong>.
+                    </p>
+                  </div>
+                </div>
+              )}
 
-          {/* Recommended For You Section */}
+              {/* Profile alerts */}
+              {completionPercent < 80 && (
+                <div className="bg-amber-50 border border-amber-100/60 p-4 rounded-2xl flex items-start gap-3 dark:bg-amber-955/10 dark:border-amber-900/30">
+                  <AlertCircle className="h-4.5 w-4.5 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs font-bold text-amber-800 dark:text-amber-400">Calibrate AI Recommendations</h4>
+                    <p className="text-[11px] text-amber-600 dark:text-amber-500 leading-normal mt-0.5">
+                      Your profile score is currently {completionPercent}%. Complete your categories and career interests in settings to unlock customized matches.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Recommended Opportunities Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-extrabold text-foreground flex items-center gap-2">
-                <Award className="h-5 w-5 text-primary" /> Recommended For You
+                <Award className="h-5 w-5 text-primary" /> Recommended Opportunities
               </h2>
-              <span className="text-xs text-foreground-muted font-bold">Matches: {feeds.exams.length + feeds.scholarships.length}</span>
+              {hasRecommendations && (
+                <span className="text-xs text-slate-500 font-bold bg-slate-50 border border-slate-200 px-2 py-0.5 rounded dark:bg-slate-900/40 dark:border-slate-800 select-none">
+                  Matches: {userType === 'farmer' ? feeds.schemes.length : (feeds.exams.length + feeds.scholarships.length)}
+                </span>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Exams */}
-              {feeds.exams.map(exam => (
-                <div key={exam.id} className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-shadow relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-primary/70"></div>
-                  <div className="flex justify-between items-start mb-2 pl-2">
-                    <span className="text-[9px] uppercase font-bold text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10">Exam</span>
-                    {exam.last_date && <span className="text-[10px] font-bold text-rose-600">{new Date(exam.last_date).toLocaleDateString()}</span>}
-                  </div>
-                  <h3 className="font-extrabold text-slate-800 text-sm leading-snug group-hover:text-primary transition-colors pl-2">{exam.title}</h3>
-                  <p className="text-xs text-foreground-muted leading-relaxed mt-2 pl-2 line-clamp-2">{exam.description || 'Details inside notification guidelines.'}</p>
-                  <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 pl-2">
-                    <span className="text-[10px] text-slate-400 font-bold">Qual: {exam.qualification}</span>
-                    <Link href={`/exams/${exam.id}`} className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5">
-                      Details <ChevronRight className="h-3 w-3" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
-
-              {/* Scholarships */}
-              {feeds.scholarships.map(schol => (
-                <div key={schol.id} className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-shadow relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500/70"></div>
-                  <div className="flex justify-between items-start mb-2 pl-2">
-                    <span className="text-[9px] uppercase font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-100">Scholarship</span>
-                    {schol.last_date && <span className="text-[10px] font-bold text-rose-600">{new Date(schol.last_date).toLocaleDateString()}</span>}
-                  </div>
-                  <h3 className="font-extrabold text-slate-800 text-sm leading-snug group-hover:text-purple-600 transition-colors pl-2">{schol.title}</h3>
-                  <p className="text-xs text-foreground-muted leading-relaxed mt-2 pl-2 line-clamp-2">{schol.eligibility}</p>
-                  <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 pl-2">
-                    <span className="text-[10px] text-slate-400 font-bold">Limit: {schol.income_limit || 'Varies'}</span>
-                    <Link href={`/scholarships/${schol.id}`} className="text-xs font-bold text-purple-600 hover:underline flex items-center gap-0.5">
-                      Details <ChevronRight className="h-3 w-3" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Government Schemes recommendations */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold text-foreground">Eligible Schemes</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {feeds.schemes.map(scheme => (
-                <div key={scheme.id} className="bg-white border border-slate-200 p-5 rounded-2xl flex flex-col justify-between">
-                  <div>
-                    <span className="text-[9px] uppercase font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 inline-block mb-2">Scheme</span>
-                    <h4 className="font-bold text-slate-800 text-sm">{scheme.title}</h4>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">{scheme.benefits}</p>
-                  </div>
-                  <Link href={`/schemes/${scheme.id}`} className="text-xs font-bold text-emerald-600 hover:underline mt-4 flex items-center gap-0.5">
-                    Explore Details <ChevronRight className="h-3 w-3" />
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Higher Education Pathways */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold text-foreground">Higher Education Pathways</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {feeds.education.map(edu => (
-                <div key={edu.id} className="bg-white border border-slate-200 p-5 rounded-2xl flex flex-col justify-between">
-                  <div>
-                    <span className="text-[9px] uppercase font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 inline-block mb-2">{edu.type}</span>
-                    <h4 className="font-bold text-slate-800 text-sm">{edu.name}</h4>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">{edu.details}</p>
-                  </div>
-                  <Link href={`/education/${edu.id}`} className="text-xs font-bold text-indigo-600 hover:underline mt-4 flex items-center gap-0.5">
-                    Explore Details <ChevronRight className="h-3 w-3" />
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Recently Added vs Closing Soon Split panels */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
-            <div>
-              <h3 className="font-extrabold text-slate-800 mb-4 flex items-center gap-1.5">
-                <Calendar className="h-4 w-4 text-primary" /> Recently Added
-              </h3>
-              <div className="space-y-3.5">
-                {feeds.recentlyAdded.map((item: any, i) => (
-                  <div key={i} className="flex justify-between items-center text-xs">
-                    <Link href={`/${item.type}s/${item.id}`} className="font-semibold text-slate-700 hover:text-primary transition-colors truncate max-w-[190px]">
-                      {item.title}
-                    </Link>
-                    <span className="text-[10px] text-slate-400 font-medium shrink-0 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded">{item.displayType}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-extrabold text-danger mb-4 flex items-center gap-1.5">
-                <BellRing className="h-4 w-4 text-danger animate-pulse" /> Closing Soon
-              </h3>
-              <div className="space-y-3.5">
-                {feeds.closingSoon.map((item: any, i) => (
-                  <div key={i} className="flex justify-between items-center text-xs">
-                    <Link href={`/${item.type}s/${item.id}`} className="font-semibold text-slate-700 hover:text-primary transition-colors truncate max-w-[190px]">
-                      {item.title}
-                    </Link>
-                    <span className="text-[10px] text-rose-600 font-bold shrink-0 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded">
-                      {item.dateObj ? item.dateObj.toLocaleDateString() : 'N/A'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Bookmarked / Saved opportunities panel */}
-          <div className="space-y-4 pt-4 border-t border-slate-100">
-            <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
-              <Bookmark className="h-4.5 w-4.5 text-primary" /> Saved Opportunities
-            </h2>
-            {savedItems.length === 0 ? (
-              <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center">
-                <p className="text-xs text-slate-400">No bookmarked entries found. Save notifications to monitor them here.</p>
+            {!hasRecommendations ? (
+              <div className="bg-slate-50 border-2 border-dashed border-slate-250 rounded-3xl p-8 text-center dark:bg-slate-900/10 dark:border-slate-800">
+                <Sparkles className="h-8 w-8 text-slate-400 mx-auto mb-2 opacity-60 animate-pulse" />
+                <p className="text-sm font-bold text-slate-600 dark:text-slate-350">No recommendations found</p>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Please complete more profile details such as domicile state, qualifications, and categories to calibrate the AI matching engine.</p>
+                <Link href="/settings" className="inline-block mt-4">
+                  <Button variant="primary" className="text-xs px-4 py-2.5 rounded-xl font-bold cursor-pointer">Complete Profile Details</Button>
+                </Link>
               </div>
             ) : (
-              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100">
-                {savedItems.slice(0, 3).map(item => (
-                  <div key={item.id} className="p-4 flex justify-between items-center text-xs">
-                    <div className="truncate">
-                      <strong className="text-slate-800">{item.title}</strong>
-                      <span className="text-slate-400 block mt-0.5">{item.item_type} • {item.tag || 'Saved'}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {userType === 'farmer' ? (
+                  /* Farmer Schemes Feed */
+                  feeds.schemes.map(scheme => (
+                    <div key={scheme.id} className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-shadow relative overflow-hidden group flex flex-col justify-between min-h-[180px] dark:bg-slate-850 dark:border-slate-800">
+                      <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-600/70"></div>
+                      <div>
+                        <div className="flex justify-between items-start mb-2 pl-2">
+                          <span className="text-[9px] uppercase font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30">Scheme</span>
+                          {scheme.application_end_date && <span className="text-[10px] font-bold text-slate-400">Ends: {scheme.application_end_date}</span>}
+                        </div>
+                        <h3 className="font-extrabold text-slate-800 dark:text-white text-sm leading-snug group-hover:text-primary transition-colors pl-2">{scheme.title}</h3>
+                        <p className="text-xs text-slate-500 leading-relaxed mt-2 pl-2 line-clamp-2">{scheme.description || 'Verified citizen welfare subsidy and assistance scheme details inside.'}</p>
+                      </div>
+                      <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 dark:border-slate-800 pl-2">
+                        <span className="text-[10px] text-slate-400 font-bold">Benefits: {scheme.benefits || 'Financial/Subsidies'}</span>
+                        <Link href={`/schemes/${scheme.id}`} className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5">
+                          Details <ChevronRight className="h-3 w-3" />
+                        </Link>
+                      </div>
                     </div>
-                    <Link href={item.item_type.toLowerCase() === 'education' ? `/education/${item.item_id}` : `/${item.item_type.toLowerCase()}s/${item.item_id}`} className="text-primary font-bold hover:underline">
-                      View
-                    </Link>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  /* Student Feed */
+                  <>
+                    {/* Exams */}
+                    {feeds.exams.map(exam => (
+                      <div key={exam.id} className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-shadow relative overflow-hidden group flex flex-col justify-between min-h-[180px] dark:bg-slate-850 dark:border-slate-800">
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-primary/70"></div>
+                        <div>
+                          <div className="flex justify-between items-start mb-2 pl-2">
+                            <span className="text-[9px] uppercase font-bold text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10 dark:bg-primary/20 dark:text-primary-light">Exam</span>
+                            {exam.last_date && <span className="text-[10px] font-bold text-rose-600">{new Date(exam.last_date).toLocaleDateString()}</span>}
+                          </div>
+                          <h3 className="font-extrabold text-slate-800 dark:text-white text-sm leading-snug group-hover:text-primary transition-colors pl-2">{exam.title}</h3>
+                          <p className="text-xs text-slate-500 leading-relaxed mt-2 pl-2 line-clamp-2">{exam.description || 'Details inside notification guidelines.'}</p>
+                        </div>
+                        <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 dark:border-slate-800 pl-2">
+                          <span className="text-[10px] text-slate-400 font-bold">Qual: {exam.qualification}</span>
+                          <Link href={`/exams/${exam.id}`} className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5">
+                            Details <ChevronRight className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Scholarships */}
+                    {feeds.scholarships.map(schol => (
+                      <div key={schol.id} className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-shadow relative overflow-hidden group flex flex-col justify-between min-h-[180px] dark:bg-slate-850 dark:border-slate-800">
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500/70"></div>
+                        <div>
+                          <div className="flex justify-between items-start mb-2 pl-2">
+                            <span className="text-[9px] uppercase font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-100 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-900/30">Scholarship</span>
+                            {schol.last_date && <span className="text-[10px] font-bold text-rose-600">{new Date(schol.last_date).toLocaleDateString()}</span>}
+                          </div>
+                          <h3 className="font-extrabold text-slate-800 dark:text-white text-sm leading-snug group-hover:text-purple-650 transition-colors pl-2">{schol.title}</h3>
+                          <p className="text-xs text-slate-500 leading-relaxed mt-2 pl-2 line-clamp-2">{schol.eligibility}</p>
+                        </div>
+                        <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 dark:border-slate-800 pl-2">
+                          <span className="text-[10px] text-slate-400 font-bold">Limit: {schol.income_limit || 'Varies'}</span>
+                          <Link href={`/scholarships/${schol.id}`} className="text-xs font-bold text-purple-650 hover:underline flex items-center gap-0.5">
+                            Details <ChevronRight className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </div>
 
+          {/* Saved Opportunities Tracking Desk */}
+          <div className="space-y-4 pt-4 border-t border-slate-150 dark:border-slate-800">
+            <h2 className="text-xl font-extrabold text-foreground flex items-center gap-2">
+              <Bookmark className="h-5 w-5 text-primary" /> Saved Opportunities
+            </h2>
+            
+            {savedItems.length === 0 ? (
+              <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center dark:bg-slate-900/10 dark:border-slate-800">
+                <Bookmark className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400">No saved opportunities yet</p>
+                <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto leading-normal">
+                  Browse government exams or scholarships and bookmark them to monitor statuses here.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {savedItems.map(item => {
+                  const isApplied = appliedIds.includes(item.item_id);
+                  const detailUrl = `/${item.item_type.toLowerCase()}s/${item.item_id}`;
+
+                  return (
+                    <div key={item.id} className="bg-white border border-slate-200 p-4.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 dark:bg-slate-850 dark:border-slate-800">
+                      <div>
+                        <span className="text-[8.5px] font-black uppercase bg-slate-50 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-150 dark:border-slate-800 text-slate-450 select-none">
+                          {item.item_type}
+                        </span>
+                        <h4 className="font-bold text-slate-800 dark:text-white text-xs sm:text-sm mt-1">{item.title}</h4>
+                      </div>
+                      
+                      {/* Action triggers */}
+                      <div className="flex items-center gap-2 select-none self-end sm:self-auto">
+                        <button
+                          onClick={() => handleToggleApplied(item.item_id)}
+                          className={`text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                            isApplied 
+                              ? 'bg-emerald-50 border-emerald-100 text-emerald-600'
+                              : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300'
+                          }`}
+                        >
+                          {isApplied ? '✓ Applied' : 'Mark Applied'}
+                        </button>
+
+                        <Link href={detailUrl}>
+                          <Button variant="outline" className="text-[10px] font-bold py-1.5 px-3 rounded-xl cursor-pointer">
+                            View
+                          </Button>
+                        </Link>
+
+                        <button 
+                          onClick={() => handleRemoveSaved(item.id, item.item_type, item.item_id)}
+                          className="p-1.5 border border-rose-100 dark:border-rose-900/30 rounded-xl hover:bg-rose-50 text-rose-455 hover:text-rose-600 cursor-pointer"
+                          title="Remove bookmark"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Applied Opportunities section */}
+          {appliedOpportunities.length > 0 && (
+            <div className="space-y-4 pt-4 border-t border-slate-150 dark:border-slate-800">
+              <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
+                <CheckCircle className="h-4.5 w-4.5 text-emerald-600" /> Applied Opportunities ({appliedOpportunities.length})
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {appliedOpportunities.map(item => (
+                  <div key={item.id} className="bg-white border border-slate-200 p-4.5 rounded-2xl flex flex-col justify-between dark:bg-slate-850 dark:border-slate-800">
+                    <div>
+                      <span className="text-[8.5px] uppercase font-bold text-slate-400 bg-slate-50 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-150 dark:border-slate-800 inline-block mb-1.5 select-none">
+                        {item.item_type}
+                      </span>
+                      <h4 className="font-extrabold text-slate-800 dark:text-white text-xs leading-snug">{item.title}</h4>
+                    </div>
+                    <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 dark:border-slate-800 select-none">
+                      <span className="text-[9.5px] text-emerald-600 font-extrabold flex items-center gap-0.5">
+                        <Check className="h-3.5 w-3.5 shrink-0" /> Application Lodged
+                      </span>
+                      <Link href={`/${item.item_type.toLowerCase()}s/${item.item_id}`} className="text-xs font-bold text-primary hover:underline">
+                        Details
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recently Viewed Opportunities */}
+          {recentlyViewed.length > 0 && (
+            <div className="space-y-4 pt-4 border-t border-slate-150 dark:border-slate-800">
+              <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
+                <Activity className="h-4.5 w-4.5 text-indigo-500 animate-pulse" /> Recently Viewed
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 select-none">
+                {recentlyViewed.map(item => {
+                  const detailUrl = `/${item.type.toLowerCase()}s/${item.id}`;
+                  return (
+                    <Link 
+                      key={item.id} 
+                      href={detailUrl}
+                      className="bg-white border border-slate-200 p-4.5 rounded-2xl hover:shadow-xs hover:border-slate-300 transition-all dark:bg-slate-850 dark:border-slate-800 flex justify-between items-center"
+                    >
+                      <div className="truncate">
+                        <span className="text-[8px] uppercase font-extrabold text-slate-400 bg-slate-50 dark:bg-slate-900 border border-slate-150 px-1.5 py-0.5 rounded dark:border-slate-800">{item.type}</span>
+                        <h4 className="font-extrabold text-slate-800 dark:text-white text-xs mt-1 truncate max-w-[190px]">{item.title}</h4>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-slate-400" />
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
         </div>
 
-        {/* Right side stats panels */}
+        {/* Right side stats & settings panels */}
         <div className="space-y-6">
           
           {/* Profile score card */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs">
-            <h3 className="font-extrabold text-foreground mb-4">Profile Completeness</h3>
-            
-            <div className="flex items-end gap-3 mb-2">
-              <span className="text-4xl font-black text-primary leading-none">{completionPercent}%</span>
-              <span className="text-xs text-slate-400 font-bold mb-1">Score</span>
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs dark:bg-slate-850 dark:border-slate-800">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-extrabold text-foreground text-xs uppercase tracking-wider text-slate-400">Profile Completion</h3>
+              <span className="text-sm font-black text-primary dark:text-accent leading-none">{completionPercent}%</span>
             </div>
 
-            <div className="w-full bg-slate-100 rounded-full h-2.5 mb-4 relative overflow-hidden">
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 mb-4 relative overflow-hidden">
               <div 
-                className="bg-primary h-2.5 rounded-full transition-all duration-500" 
+                className="bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full transition-all duration-500" 
                 style={{ width: `${completionPercent}%` }}
               />
             </div>
             
-            <p className="text-xs text-foreground-muted leading-relaxed font-semibold">
-              {completionPercent < 100 
-                ? 'Fill personal and education details inside Profile Settings to unlock optimal suggestions.'
-                : 'Your profile score is 100%. Career matching feeds are fully calibrated.'}
+            <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed font-semibold">
+              Complete your profile to unlock better AI recommendations.
             </p>
 
-            <Link href="/profile" className="block mt-5">
+            <Link href="/settings" className="block mt-5">
               <Button variant="outline" className="w-full text-xs font-extrabold py-2.5 rounded-xl cursor-pointer">
                 Manage Profile & Settings
               </Button>
             </Link>
           </div>
 
-          {/* AI career suggestions callout banner */}
-          <div className="bg-gradient-to-br from-primary to-secondary rounded-3xl p-6 text-white shadow-lg shadow-primary/20 relative overflow-hidden">
-            <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-[30px] translate-x-1/2 -translate-y-1/2"></div>
-            <h3 className="font-extrabold text-lg mb-2 relative z-10 flex items-center gap-1.5">
-              <Sparkles className="h-5 w-5 text-accent animate-pulse" /> Ask Career AI
+          {/* Deadline Alerts and Reminders settings Desk */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs dark:bg-slate-850 dark:border-slate-800 space-y-4 select-none">
+            <h3 className="font-extrabold text-foreground text-xs uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Bell className="h-4 w-4 text-primary" /> Reminder Settings
             </h3>
-            <p className="text-white/80 text-xs mb-5 relative z-10 leading-relaxed font-semibold">
-              Your profile qualifications and domicile state are fully pre-filled in the AI Assistant chatbot. Just ask "What am I eligible for?" for immediate details.
-            </p>
-            <Link href="/ai-assistant" className="bg-white text-primary text-xs font-extrabold py-2.5 px-4 rounded-xl inline-block hover:bg-slate-50 transition-colors relative z-10 shadow-xs cursor-pointer">
-              Launch Career AI
-            </Link>
+
+            <div className="space-y-3 text-xs">
+              
+              <label className="flex items-center justify-between cursor-pointer py-1">
+                <span className="font-bold text-slate-650 dark:text-slate-350">Email deadline alerts</span>
+                <input 
+                  type="checkbox" 
+                  checked={emailReminders} 
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setEmailReminders(checked);
+                    handleSaveReminderSettings(checked, pushReminders, reminderDays);
+                  }}
+                  className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer py-1">
+                <span className="font-bold text-slate-650 dark:text-slate-350">Browser push notification updates</span>
+                <input 
+                  type="checkbox" 
+                  checked={pushReminders} 
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setPushReminders(checked);
+                    handleSaveReminderSettings(emailReminders, checked, reminderDays);
+                  }}
+                  className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                />
+              </label>
+
+              <div className="pt-2">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">Remind me before closing</span>
+                <select
+                  value={reminderDays}
+                  onChange={(e) => {
+                    const days = parseInt(e.target.value);
+                    setReminderDays(days);
+                    handleSaveReminderSettings(emailReminders, pushReminders, days);
+                  }}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-650 cursor-pointer outline-none focus:border-primary"
+                >
+                  <option value="3">3 Days Prior</option>
+                  <option value="5">5 Days Prior</option>
+                  <option value="7">7 Days Prior</option>
+                  <option value="14">14 Days Prior</option>
+                </select>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Quick Actions Card */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs dark:bg-slate-850 dark:border-slate-800">
+            <h3 className="font-extrabold text-foreground mb-4 text-xs uppercase tracking-wider text-slate-400">Quick Actions</h3>
+            
+            <div className="grid grid-cols-1 gap-2.5">
+              <Link 
+                href="/exams" 
+                className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-primary/20 hover:bg-slate-50/50 transition-all group dark:border-slate-800 dark:hover:bg-slate-900/40"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl dark:bg-blue-950/20 dark:text-blue-400">
+                    <FileText className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-350">Government Exams</h4>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Explore recruitment notifications</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-primary transition-colors" />
+              </Link>
+
+              <Link 
+                href="/scholarships" 
+                className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-purple-200 hover:bg-slate-50/50 transition-all group dark:border-slate-800 dark:hover:bg-slate-900/40"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl dark:bg-purple-950/20 dark:text-purple-400">
+                    <Award className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-350">Scholarships</h4>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Explore student financial aids</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-purple-600 transition-colors" />
+              </Link>
+
+              <Link 
+                href="/schemes" 
+                className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-slate-50/50 transition-all group dark:border-slate-800 dark:hover:bg-slate-900/40"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl dark:bg-emerald-950/20 dark:text-emerald-400">
+                    <Heart className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-350">Government Schemes</h4>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Welfare yojanas & subsidies</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-600 transition-colors" />
+              </Link>
+
+              <Link 
+                href="/education" 
+                className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-indigo-200 hover:bg-slate-50/50 transition-all group dark:border-slate-800 dark:hover:bg-slate-900/40"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl dark:bg-indigo-950/20 dark:text-indigo-400">
+                    <GraduationCap className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-350">Higher Education</h4>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Entrance pathways & admissions</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-indigo-600 transition-colors" />
+              </Link>
+            </div>
           </div>
 
         </div>

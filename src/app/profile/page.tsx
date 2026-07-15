@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -45,6 +46,10 @@ interface StudentProfile {
   newSchemes: boolean;
   deadlines: boolean;
   pushNotifications: boolean;
+  // AI recommendations
+  preferredSector: string;
+  income: string;
+  skills: string;
 }
 
 export default function ProfilePage() {
@@ -75,7 +80,10 @@ export default function ProfilePage() {
     newScholarships: true,
     newSchemes: true,
     deadlines: true,
-    pushNotifications: false
+    pushNotifications: false,
+    preferredSector: 'Any',
+    income: '',
+    skills: ''
   });
 
   useEffect(() => {
@@ -92,7 +100,10 @@ export default function ProfilePage() {
           
           // Read from Supabase user auth metadata
           if (authUser.user_metadata?.student_profile) {
-            setStudentProfile(authUser.user_metadata.student_profile);
+            setStudentProfile(prev => ({
+              ...prev,
+              ...authUser.user_metadata.student_profile
+            }));
           } else {
             // prefill name from registration profile if metadata is blank
             const dbProfile = await api.getUserProfile() as any;
@@ -111,7 +122,10 @@ export default function ProfilePage() {
           // If guest, try pre-filling from localStorage
           const stored = localStorage.getItem('civicai_student_profile');
           if (stored) {
-            setStudentProfile(JSON.parse(stored));
+            setStudentProfile(prev => ({
+              ...prev,
+              ...JSON.parse(stored)
+            }));
           }
           
           // Local guest saved bookmarks
@@ -441,6 +455,49 @@ export default function ProfilePage() {
                       placeholder="e.g. 8.4 CGPA or 82%"
                       value={studentProfile.percentage}
                       onChange={(e) => setStudentProfile(prev => ({ ...prev, percentage: e.target.value }))}
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:outline-none focus:border-primary transition-colors outline-none font-medium"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2.5: AI Recommendation Preferences */}
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" /> AI Recommendation Settings
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Preferred Sector</label>
+                    <select 
+                      value={studentProfile.preferredSector || 'Any'}
+                      onChange={(e) => setStudentProfile(prev => ({ ...prev, preferredSector: e.target.value }))}
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:outline-none focus:border-primary transition-colors outline-none cursor-pointer font-medium"
+                    >
+                      <option value="Any">Any Sector</option>
+                      <option value="Central Government">Central Government</option>
+                      <option value="State Government">State Government</option>
+                      <option value="Banking">Banking Sector</option>
+                      <option value="Public Sector">Public Sector Und. (PSUs)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Annual Family Income (Optional)</label>
+                    <input 
+                      type="number" 
+                      placeholder="e.g. 250000"
+                      value={studentProfile.income || ''}
+                      onChange={(e) => setStudentProfile(prev => ({ ...prev, income: e.target.value }))}
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:outline-none focus:border-primary transition-colors outline-none font-medium"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Your Skills (Optional, Comma Separated)</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Typing, Computer Literacy, Coding, Tally"
+                      value={studentProfile.skills || ''}
+                      onChange={(e) => setStudentProfile(prev => ({ ...prev, skills: e.target.value }))}
                       className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:outline-none focus:border-primary transition-colors outline-none font-medium"
                     />
                   </div>

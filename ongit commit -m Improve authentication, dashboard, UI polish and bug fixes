@@ -1,0 +1,105 @@
+warning: in the working copy of 'src/app/admin/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/dashboard/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/education/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/education/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/exams/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/exams/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/login/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/schemes/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/schemes/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/scholarships/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/scholarships/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/auth/AuthModal.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/layout/Footer.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/ui/GlobalSearch.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/proxy.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/src/app/admin/page.tsx b/src/app/admin/page.tsx[m
+[1mindex bb441f3..409cf57 100644[m
+[1m--- a/src/app/admin/page.tsx[m
+[1m+++ b/src/app/admin/page.tsx[m
+[36m@@ -1,114 +1,1066 @@[m
+ 'use client';[m
+[32m+[m
+ import { useState, useEffect } from 'react';[m
+ import { useRouter } from 'next/navigation';[m
+[31m-import { api } from '@/services/api';[m
+[31m-import { ShieldCheck, UploadCloud, Users, FileText, Database, Loader2 } from 'lucide-react';[m
+[32m+[m[32mimport Link from 'next/link';[m
+[32m+[m[32mimport {[m[41m [m
+[32m+[m[32m  ShieldCheck, UploadCloud, Users, FileText, Database, Loader2,[m[41m [m
+[32m+[m[32m  Plus, Edit2, Trash2, Archive, RotateCcw, AlertTriangle, Check, X,[m[41m [m
+[32m+[m[32m  Search, ChevronLeft, ChevronRight, Sparkles, UserCheck, Bell, MessageSquare,[m[41m [m
+[32m+[m[32m  HelpCircle, ChevronRightSquare, ArrowLeft, RefreshCw, Layers, Lock,[m
+[32m+[m[32m  CheckCircle2, Award, Heart, GraduationCap[m
+[32m+[m[32m} from 'lucide-react';[m
+[32m+[m[32mimport { motion, AnimatePresence } from 'framer-motion';[m
+[32m+[m[32mimport { FALLBACK_EXAMS, FALLBACK_SCHEMES, FALLBACK_SCHOLARSHIPS, FALLBACK_STATES } from '@/lib/fallbackData';[m
+[32m+[m[32mimport Button from '@/components/ui/Button';[m
+[32m+[m
+[32m+[m[32m// Fallback Higher Ed[m
+[32m+[m[32mconst FALLBACK_EDUCATION = [[m
+[32m+[m[32m  { id: '1', name: 'National Institute of Technology (NIT)', type: 'Government University', details: 'Premier engineering institutes located across India.', state: 'All India', website: 'https://www.nitcouncil.org.in' },[m
+[32m+[m[32m  { id: '2', name: 'CUET (UG) 2026', type: 'Entrance Exam', details: 'Common University Entrance Test for undergraduate programs.', state: 'All India', website: 'https://cuet.samarth.ac.in' },[m
+[32m+[m[32m  { id: '3', name: 'Prime Minister Research Fellowship (PMRF)', type: 'Fellowship', details: 'Prestigious fellowship for PhD programs in premier institutes.', state: 'All India', website: 'https://pmrf.in' }[m
+[32m+[m[32m];[m
+[32m+[m
+[32m+[m[32m// Fallback feedback tickets[m
+[32m+[m[32mconst FALLBACK_FEEDBACK = [[m
+[32m+[m[32m  { id: 'fb-1', userName: 'Rajesh Kumar', email: 'rajesh@gmail.com', message: 'Could you please add Bihar state post-matric scholarship?', status: 'Pending', date: '2026-07-14' },[m
+[32m+[m[32m  { id: 'fb-2', userName: 'Sunita Sharma', email: 'sunita@gmail.com', message: 'The direct apply link for UPSC Civil Services redirects to main homepage.', status: 'Resolved', date: '2026-07-13' },[m
+[32m+[m[32m  { id: 'fb-3', userName: 'Anil Patil', email: 'anil@gmail.com', message: 'PM-KISAN document checklist prints empty on Chrome mobile browser.', status: 'Pending', date: '2026-07-12' }[m
+[32m+[m[32m];[m
+[32m+[m
+[32m+[m[32m// Fallback users list[m
+[32m+[m[32mconst FALLBACK_USERS = [[m
+[32m+[m[32m  { id: 'u-1', name: 'Aarav Mehta', email: 'aarav@gmail.com', role: 'student', state: 'Gujarat', status: 'Active' },[m
+[32m+[m[32m  { id: 'u-2', name: 'Devendra Singh', email: 'devendra@farmer.org', role: 'farmer', state: 'Punjab', status: 'Active' },[m
+[32m+[m[32m  { id: 'u-3', name: 'Neha Gupta', email: 'neha@gmail.com', role: 'student', state: 'Delhi', status: 'Inactive' },[m
+[32m+[m[32m  { id: 'u-4', name: 'Ramesh Gowda', email: 'ramesh.g@yahoo.com', role: 'farmer', state: 'Karnataka', status: 'Active' }[m
+[32m+[m[32m];[m
+[32m+[m
+[32m+[m[32m// Fallback site-wide notifications[m
+[32m+[m[32mconst FALLBACK_NOTIFICATIONS = [[m
+[32m+[m[32m  { id: 'n-1', title: 'System Maintenance scheduled', message: 'CivicAI portal will be offline on 20th July for server upgrades.', type: 'Alert', date: '2026-07-15' },[m
+[32m+[m[32m  { id: 'n-2', title: 'New UPSC vacancies updated', message: 'SSC CGL exam dates and documents guidelines are now verified.', type: 'Update', date: '2026-07-14' }[m
+[32m+[m[32m];[m
+[32m+[m
+[32m+[m[32m// Fallback AI knowledge items[m
+[32m+[m[32mconst FALLBACK_AI_KB = [[m
+[32m+[m[32m  { id: 'kb-1', title: 'National Education Policy NEP 2020 Guidelines', size: '2.4 MB', type: 'PDF', updated: '2026-07-10' },[m
+[32m+[m[32m  { id: 'kb-2', title: 'Unified Schemes Reservation Quota Matrix', size: '420 KB', type: 'JSON', updated: '2026-07-12' },[m
+[32m+[m[32m  { id: 'kb-3', title: 'State-wise Domicile Eligibility Ingestion rules', size: '1.2 MB', type: 'CSV', updated: '2026-07-14' }[m
+[32m+[m[32m];[m
+[32m+[m
+[32m+[m[32mtype AdminRole = 'Super Admin' | 'Editor' | 'Content Manager';[m
+ [m
+ export default function AdminDashboard() {[m
+[31m-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);[m
+[31m-  const [loading, setLoading] = useState(true);[m
+   const router = useRouter();[m
+ [m
+[32m+[m[32m  // Role based access control (RBAC) selection[m
+[32m+[m[32m  const [adminRole, setAdminRole] = useState<AdminRole>('Super Admin');[m
+[32m+[m
+[32m+[m[32m  // Lists state[m
+[32m+[m[32m  const [exams, setExams] = useState<any[]>([]);[m
+[32m+[m[32m  const [schemes, setSchemes] = useState<any[]>([]);[m
+[32m+[m[32m  const [scholarships, setScholarships] = useState<any[]>([]);[m
+[32m+[m[32m  const [education, setEducation] = useState<any[]>([]);[m
+[32m+[m[32m  const [users, setUsers] = useState<any[]>([]);[m
+[32m+[m[32m  const [feedback, setFeedback] = useState<any[]>([]);[m
+[32m+[m[32m  const [notifications, setNotifications] = useState<any[]>([]);[m
+[32m+[m[32m  const [aiKb, setAiKb] = useState<any[]>([]);[m
+[32m+[m
+[32m+[m[32m  // Navigation module tabs[m
+[32m+[m[32m  const [activeModule, setActiveModule] = useState<'overview' | 'users' | 'exams' | 'scholarships' | 'schemes' | 'education' | 'updates' | 'notifications' | 'feedback' | 'ai_kb'>('overview');[m
+[32m+[m
+[32m+[m[32m  // Search & Pagination & Sorting[m
+[32m+[m[32m  const [search, setSearch] = useState('');[m
+[32m+[m[32m  const [currentPage, setCurrentPage] = useState(1);[m
+[32m+[m[32m  const [pageSize] = useState(5);[m
+[32m+[m[32m  const [sortBy, setSortBy] = useState('newest');[m
+[32m+[m[32m  const [filterStatus, setFilterStatus] = useState('All');[m
+[32m+[m
+[32m+[m[32m  

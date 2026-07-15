@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Landmark, Menu, MessageSquareText, X, ChevronRight, User } from 'lucide-react';
+import { Landmark, Menu, MessageSquareText, X, ChevronRight, User, Bell } from 'lucide-react';
 import StateFilter from './StateFilter';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,7 +20,7 @@ export default function Header() {
     { name: 'Scholarships', href: '/scholarships' },
     { name: 'Higher Ed', href: '/education' },
     { name: 'Resources', href: '/resources' },
-    { name: 'Profile', href: '/profile' },
+    { name: 'Settings', href: '/settings' },
   ];
 
   const closeMenu = () => setIsMobileMenuOpen(false);
@@ -80,6 +80,17 @@ export default function Header() {
           >
             <MessageSquareText className="h-4 w-4" /> Ask Career AI
           </Link>
+
+          {user && (
+            <Link 
+              href="/notifications" 
+              className="relative p-2 text-slate-500 hover:text-primary rounded-full hover:bg-slate-50 transition-colors cursor-pointer mr-1.5"
+              title="Notifications Center"
+            >
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-primary rounded-full border-2 border-white"></span>
+            </Link>
+          )}
 
           {!user ? (
             <Link 

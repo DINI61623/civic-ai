@@ -37,11 +37,40 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes - redirect to home if not logged in
-  if (!user && (request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/admin'))) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    return NextResponse.redirect(url)
+  const url = request.nextUrl.clone()
+
+  const isProtectedRoute = url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/profile') || url.pathname.startsWith('/admin')
+  const isProfileCompletionRoute = url.pathname === '/profile-completion'
+  const isAuthRoute = url.pathname === '/login' || url.pathname === '/signup'
+
+  if (user) {
+    // Check if user has completed the essential profile steps (has a user_type metadata defined)
+    const hasProfile = !!user.user_metadata?.user_type
+
+    if (isAuthRoute) {
+      if (hasProfile) {
+        url.pathname = '/dashboard'
+      } else {
+        url.pathname = '/profile-completion'
+      }
+      return NextResponse.redirect(url)
+    }
+
+    if (isProtectedRoute && !hasProfile) {
+      url.pathname = '/profile-completion'
+      return NextResponse.redirect(url)
+    }
+
+    if (isProfileCompletionRoute && hasProfile) {
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+  } else {
+    // Guest accessing protected route or profile completion -> redirect to login
+    if (isProtectedRoute || isProfileCompletionRoute) {
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
