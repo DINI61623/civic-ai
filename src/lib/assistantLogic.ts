@@ -193,7 +193,7 @@ export function filterOpportunities(
       if (exam.qualification === 'Any Qualification') return true;
       if (q === 'Graduate') return true; // Graduate can do any
       if (q === 'Diploma') {
-        return exam.qualification === 'Diploma' || exam.qualification === '12th Pass' || exam.qualification === '10th Pass' || exam.eligibility.toLowerCase().includes('diploma');
+        return exam.qualification === 'Diploma' || exam.qualification === '12th Pass' || exam.qualification === '10th Pass' || (exam.eligibility?.toLowerCase().includes('diploma') ?? false);
       }
       if (q === '12th Pass') {
         return exam.qualification === '12th Pass' || exam.qualification === '10th Pass';
@@ -206,7 +206,7 @@ export function filterOpportunities(
 
     // Scholarships
     matchedScholarships = matchedScholarships.filter(s => {
-      const eligibilityText = s.eligibility.toLowerCase();
+      const eligibilityText = (s.eligibility || '').toLowerCase();
       if (q === 'Graduate') return true;
       if (q === 'Diploma') return eligibilityText.includes('diploma') || eligibilityText.includes('polytechnic') || eligibilityText.includes('varies') || eligibilityText.includes('matric');
       if (q === '12th Pass') return eligibilityText.includes('12') || eligibilityText.includes('post-matric') || eligibilityText.includes('matric') || eligibilityText.includes('varies');
@@ -243,18 +243,18 @@ export function filterOpportunities(
 
   // 3. Filter by Age
   if (filters.age !== undefined) {
-    matchedExams = matchedExams.filter(exam => isAgeEligible(filters.age, exam.age_limit));
+    matchedExams = matchedExams.filter(exam => exam.age_limit ? isAgeEligible(filters.age, exam.age_limit) : true);
   }
 
   // 4. Filter by Category
   if (filters.category) {
     if (filters.category === 'SC' || filters.category === 'ST') {
       matchedScholarships = matchedScholarships.filter(s => {
-        const text = s.eligibility.toLowerCase();
+        const text = (s.eligibility || '').toLowerCase();
         return text.includes('sc') || text.includes('st') || text.includes('varies') || !text.includes('only');
       });
       matchedSchemes = matchedSchemes.filter(s => {
-        const text = s.eligibility.toLowerCase();
+        const text = (s.eligibility || '').toLowerCase();
         return text.includes('sc') || text.includes('st') || !text.includes('only');
       });
     }
@@ -302,7 +302,7 @@ export function filterOpportunities(
     } else if (interest === 'defence') {
       matchedExams = []; // Trigger fallback since we don't have direct defence exams
     } else if (interest === 'engineering') {
-      matchedExams = matchedExams.filter(exam => exam.title.toLowerCase().includes('engineer') || exam.title.toLowerCase().includes('je') || exam.eligibility.toLowerCase().includes('engineering') || exam.eligibility.toLowerCase().includes('diploma'));
+      matchedExams = matchedExams.filter(exam => exam.title.toLowerCase().includes('engineer') || exam.title.toLowerCase().includes('je') || (exam.eligibility?.toLowerCase().includes('engineering') ?? false) || (exam.eligibility?.toLowerCase().includes('diploma') ?? false));
     }
   }
 

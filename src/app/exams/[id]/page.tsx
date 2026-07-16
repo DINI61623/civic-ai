@@ -48,7 +48,7 @@ export default function ExamDetailPage() {
 
         if (targetExam) {
           setExam(targetExam);
-          setDept(deptName ? { id: '', name: deptName } : null);
+          setDept(deptName ? { id: '', name: deptName, state_id: '', is_central: false } : null);
           setState(stateName ? { id: '', name: stateName } : null);
         }
       } catch (err) {

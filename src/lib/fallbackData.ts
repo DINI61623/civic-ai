@@ -14,13 +14,13 @@ export interface Exam {
   id: string;
   title: string;
   description: string | null;
-  eligibility: string;
-  qualification: string;
-  age_limit: string;
-  state_id: string;
-  department_id: string;
-  start_date: string;
-  last_date: string;
+  eligibility: string | null;
+  qualification: string | null;
+  age_limit: string | null;
+  state_id: string | null;
+  department_id: string | null;
+  start_date: string | null;
+  last_date: string | null;
   official_website: string | null;
   notification_url: string | null;
   apply_link: string | null;
@@ -43,12 +43,12 @@ export interface Exam {
 export interface Scheme {
   id: string;
   title: string;
-  category: string;
+  category: string | null;
   description: string | null;
-  benefits: string;
-  eligibility: string;
+  benefits: string | null;
+  eligibility: string | null;
   required_documents: string | null;
-  state_id: string;
+  state_id: string | null;
   department_id: string | null;
   official_website: string | null;
   apply_link: string | null;
@@ -60,11 +60,11 @@ export interface Scheme {
 export interface Scholarship {
   id: string;
   title: string;
-  type: string; // Central / State
+  type: string | null; // Central / State
   description: string | null;
-  eligibility: string;
-  last_date: string;
-  state_id: string;
+  eligibility: string | null;
+  last_date: string | null;
+  state_id: string | null;
   official_website: string | null;
   apply_link: string | null;
   income_limit: string | null;

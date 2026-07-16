@@ -24,8 +24,8 @@ interface NotifLike {
   id: string;
   title: string;
   benefits?: string | null;
-  type?: string;
-  qualification?: string;
+  type?: string | null;
+  qualification?: string | null;
   notification_date?: string | null;
   start_date?: string | null;
   vacancies?: number | null;

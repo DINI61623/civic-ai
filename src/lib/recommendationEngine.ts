@@ -35,8 +35,8 @@ export interface RecommendedOpportunity {
   title: string;
   type: 'Govt Exam' | 'Welfare Scheme' | 'Scholarship';
   description: string;
-  lastDate: string;
-  officialWebsite: string;
+  lastDate: string | null;
+  officialWebsite: string | null;
   matchScore: number;
   isEligible: boolean;
   reasons: string[];

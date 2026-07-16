@@ -59,7 +59,7 @@ export default function EducationDetailPage() {
         const eduData = await api.getEducationById(id);
         
         if (eduData) {
-          const eduName = eduData.title || eduData.name || '';
+          const eduName = eduData.title || '';
           const fallback = FALLBACK_EDUCATION.find(fe => 
             fe.name.toLowerCase().split(' ')[0] === eduName.toLowerCase().split(' ')[0]
           ) || FALLBACK_EDUCATION[0];

@@ -936,7 +936,7 @@ function AIAssistantContent() {
                                   </span>
                                 </div>
                                 <h3 className="font-extrabold text-foreground text-base group-hover:text-indigo-600 transition-colors">
-                                  {edu.name || edu.title}
+                                  {edu.title}
                                 </h3>
                               </div>
                             </div>

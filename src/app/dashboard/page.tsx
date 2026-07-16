@@ -293,7 +293,7 @@ export default function Dashboard() {
       const userRank = ranks[qual] || 4;
       
       exams = exams.filter(e => {
-        const tr = ranks[e.qualification] || 1;
+        const tr = ranks[e.qualification || ''] || 1;
         return userRank >= tr;
       });
     }
