@@ -20,6 +20,7 @@ export default function ExamDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!id) return;
     async function loadData() {
       setIsLoading(true);
       try {
@@ -34,7 +35,13 @@ export default function ExamDetailPage() {
             fe.title.toLowerCase().split(' ')[0] === examData.title.toLowerCase().split(' ')[0]
           ) || FALLBACK_EXAMS[0];
           
-          targetExam = { ...fallback, ...examData };
+          targetExam = { ...fallback } as any;
+          const examDataAny = examData as any;
+          for (const key in examDataAny) {
+            if (examDataAny[key] !== null && examDataAny[key] !== undefined && examDataAny[key] !== '') {
+              (targetExam as any)[key] = examDataAny[key];
+            }
+          }
           deptName = examData.departments?.name || '';
           stateName = examData.states?.name || '';
         } else {

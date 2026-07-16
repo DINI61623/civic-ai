@@ -36,7 +36,15 @@ export default function SchemesPage() {
         
         const schemesList = (schemesData && schemesData.length > 0 ? schemesData : FALLBACK_SCHEMES).map(scheme => {
           const fallback = FALLBACK_SCHEMES.find(fs => fs.title.toLowerCase().split(' ')[0] === scheme.title.toLowerCase().split(' ')[0]);
-          return { ...fallback, ...scheme };
+          if (!fallback) return scheme;
+          
+          const merged = { ...fallback };
+          for (const key in scheme) {
+            if (scheme[key] !== null && scheme[key] !== undefined && scheme[key] !== '') {
+              (merged as any)[key] = scheme[key];
+            }
+          }
+          return merged;
         });
 
         setSchemes(schemesList as any);

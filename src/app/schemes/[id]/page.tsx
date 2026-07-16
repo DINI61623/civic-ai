@@ -19,6 +19,7 @@ export default function SchemeDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!id) return;
     async function loadData() {
       setIsLoading(true);
       try {
@@ -32,7 +33,13 @@ export default function SchemeDetailPage() {
             fs.title.toLowerCase().split(' ')[0] === schemeData.title.toLowerCase().split(' ')[0]
           ) || FALLBACK_SCHEMES[0];
           
-          targetScheme = { ...fallback, ...schemeData };
+          targetScheme = { ...fallback } as any;
+          const schemeDataAny = schemeData as any;
+          for (const key in schemeDataAny) {
+            if (schemeDataAny[key] !== null && schemeDataAny[key] !== undefined && schemeDataAny[key] !== '') {
+              (targetScheme as any)[key] = schemeDataAny[key];
+            }
+          }
           stateName = schemeData.states?.name || '';
         } else {
           const fallback = FALLBACK_SCHEMES.find(s => s.id === id);

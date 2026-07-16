@@ -19,6 +19,7 @@ export default function ScholarshipDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!id) return;
     async function loadData() {
       setIsLoading(true);
       try {
@@ -32,7 +33,13 @@ export default function ScholarshipDetailPage() {
             fs.title.toLowerCase().split(' ')[0] === scholarshipData.title.toLowerCase().split(' ')[0]
           ) || FALLBACK_SCHOLARSHIPS[0];
           
-          targetScholarship = { ...fallback, ...scholarshipData };
+          targetScholarship = { ...fallback } as any;
+          const scholarshipDataAny = scholarshipData as any;
+          for (const key in scholarshipDataAny) {
+            if (scholarshipDataAny[key] !== null && scholarshipDataAny[key] !== undefined && scholarshipDataAny[key] !== '') {
+              (targetScholarship as any)[key] = scholarshipDataAny[key];
+            }
+          }
           stateName = scholarshipData.states?.name || '';
         } else {
           const fallback = FALLBACK_SCHOLARSHIPS.find(s => s.id === id);

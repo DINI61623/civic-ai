@@ -36,7 +36,15 @@ export default function ScholarshipsPage() {
 
         const scholarshipsList = (scholarshipsData && scholarshipsData.length > 0 ? scholarshipsData : FALLBACK_SCHOLARSHIPS).map(s => {
           const fallback = FALLBACK_SCHOLARSHIPS.find(fs => fs.title.toLowerCase().split(' ')[0] === s.title.toLowerCase().split(' ')[0]);
-          return { ...fallback, ...s };
+          if (!fallback) return s;
+          
+          const merged = { ...fallback };
+          for (const key in s) {
+            if (s[key] !== null && s[key] !== undefined && s[key] !== '') {
+              (merged as any)[key] = s[key];
+            }
+          }
+          return merged;
         });
 
         setScholarships(scholarshipsList as any);

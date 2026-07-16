@@ -37,7 +37,15 @@ export default function ExamsPage() {
         
         const examsList = (examsData && examsData.length > 0 ? examsData : FALLBACK_EXAMS).map(exam => {
           const fallback = FALLBACK_EXAMS.find(fe => fe.title.toLowerCase().split(' ')[0] === exam.title.toLowerCase().split(' ')[0]);
-          return { ...fallback, ...exam };
+          if (!fallback) return exam;
+          
+          const merged = { ...fallback };
+          for (const key in exam) {
+            if (exam[key] !== null && exam[key] !== undefined && exam[key] !== '') {
+              (merged as any)[key] = exam[key];
+            }
+          }
+          return merged;
         });
         
         setExams(examsList as any);

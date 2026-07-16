@@ -7,7 +7,7 @@ import {
   ArrowLeft, Calendar, Clock, Landmark, FileText, CheckCircle, 
   GraduationCap, ExternalLink, ArrowRight, ShieldAlert, Award, RefreshCw,
   Bookmark, Share2, Sparkles, AlertCircle, FileCheck, Check, Printer,
-  MapPin, ChevronRight, MessageSquareText, ShieldCheck, Heart, Info, HelpCircle
+  MapPin, ChevronRight, MessageSquareText, ShieldCheck, Heart, Info, HelpCircle, X
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { api } from '@/services/api';
@@ -304,10 +304,17 @@ export default function OpportunityDetails({ item, itemType, stateName, deptName
     ? ["Graduation Degree / Marksheets", "Entrance Admit Card", "Domicile Certificate", "Category Rank Certificate"]
     : (item.required_documents || ["10th Class Marksheet", "Graduation Transcripts", "Aadhaar Card", "Photo ID", "Category Certificate (if applicable)"])));
 
+  const isValidLink = (url: any) => {
+    if (!url) return false;
+    const str = String(url).trim().toLowerCase();
+    if (str === '' || str.includes('civicai.gov.in') || str === 'n/a' || str === 'null' || str === 'undefined') return false;
+    return true;
+  };
+
   const rawLink = item.apply_link || item.website || item.official_website || item.notification_url || 'https://www.civicai.gov.in';
   const officialLink = rawLink.startsWith('http') ? rawLink : `https://${rawLink}`;
 
-  const isLinkAvailable = rawLink && !rawLink.includes('civicai.gov.in');
+  const isLinkAvailable = isValidLink(rawLink);
 
   // Need Help Query Parameter URL
   const aiAssistantPromptUrl = `/ai-assistant?prompt=${encodeURIComponent(`Tell me about eligibility criteria, document checklist, and deadline status details for ${item.title || item.name}`)}`;
@@ -497,19 +504,31 @@ export default function OpportunityDetails({ item, itemType, stateName, deptName
                   )}
 
                   {/* Notification Official URL files */}
-                  {(item.notification_url || item.syllabus_link) && (
+                  {(itemType === 'Exam' || isValidLink(item.notification_url) || isValidLink(item.syllabus_link)) && (
                     <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
                       <h3 className="text-xs uppercase font-extrabold text-slate-400 tracking-wider">Official Guidelines Files</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 select-none">
-                        {item.notification_url && (
-                          <a href={item.notification_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-150 rounded-xl text-xs font-bold text-slate-700 transition-all dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900/80">
+                        {isValidLink(item.notification_url) ? (
+                          <a href={item.notification_url.startsWith('http') ? item.notification_url : `https://${item.notification_url}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-150 rounded-xl text-xs font-bold text-slate-700 transition-all dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900/80">
                             Download Official Notification PDF <ExternalLink className="h-4 w-4 text-slate-400" />
                           </a>
+                        ) : (
+                          itemType === 'Exam' && (
+                            <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-150 rounded-xl text-xs font-bold text-slate-400 dark:bg-slate-900 dark:border-slate-800 opacity-60">
+                              Official website currently unavailable <X className="h-4 w-4 text-slate-400" />
+                            </div>
+                          )
                         )}
-                        {item.syllabus_link && (
-                          <a href={item.syllabus_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-150 rounded-xl text-xs font-bold text-slate-700 transition-all dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900/80">
+                        {isValidLink(item.syllabus_link) ? (
+                          <a href={item.syllabus_link.startsWith('http') ? item.syllabus_link : `https://${item.syllabus_link}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-150 rounded-xl text-xs font-bold text-slate-700 transition-all dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900/80">
                             Download Exam Syllabus PDF <ExternalLink className="h-4 w-4 text-slate-400" />
                           </a>
+                        ) : (
+                          itemType === 'Exam' && (
+                            <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-150 rounded-xl text-xs font-bold text-slate-400 dark:bg-slate-900 dark:border-slate-800 opacity-60">
+                              Official website currently unavailable <X className="h-4 w-4 text-slate-400" />
+                            </div>
+                          )
                         )}
                       </div>
                     </div>
@@ -730,17 +749,60 @@ export default function OpportunityDetails({ item, itemType, stateName, deptName
                 </span>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                {isLinkAvailable ? (
-                  <a href={officialLink} target="_blank" rel="noopener noreferrer" className="block w-full">
-                    <Button variant="primary" fullWidth className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 cursor-pointer">
-                      Visit Official Portal <ExternalLink className="h-3.5 w-3.5" />
-                    </Button>
-                  </a>
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                {itemType === 'Exam' ? (
+                  <>
+                    {/* Official Website */}
+                    {isValidLink(item.official_website || item.website) ? (
+                      <a href={(item.official_website || item.website).startsWith('http') ? (item.official_website || item.website) : `https://${item.official_website || item.website}`} target="_blank" rel="noopener noreferrer" className="block w-full">
+                        <Button variant="primary" fullWidth className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 cursor-pointer">
+                          Visit Official Website <ExternalLink className="h-3.5 w-3.5" />
+                        </Button>
+                      </a>
+                    ) : (
+                      <Button variant="outline" fullWidth disabled className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 opacity-60 cursor-not-allowed">
+                        Official website currently unavailable
+                      </Button>
+                    )}
+
+                    {/* Application Link */}
+                    {isValidLink(item.apply_link) ? (
+                      <a href={item.apply_link.startsWith('http') ? item.apply_link : `https://${item.apply_link}`} target="_blank" rel="noopener noreferrer" className="block w-full">
+                        <Button variant="primary" fullWidth className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 cursor-pointer">
+                          Application Link <ExternalLink className="h-3.5 w-3.5" />
+                        </Button>
+                      </a>
+                    ) : (
+                      <Button variant="outline" fullWidth disabled className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 opacity-60 cursor-not-allowed">
+                        Official website currently unavailable
+                      </Button>
+                    )}
+
+                    {/* Official Notification PDF */}
+                    {isValidLink(item.notification_url) ? (
+                      <a href={item.notification_url.startsWith('http') ? item.notification_url : `https://${item.notification_url}`} target="_blank" rel="noopener noreferrer" className="block w-full">
+                        <Button variant="primary" fullWidth className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 cursor-pointer">
+                          Official Notification PDF <ExternalLink className="h-3.5 w-3.5" />
+                        </Button>
+                      </a>
+                    ) : (
+                      <Button variant="outline" fullWidth disabled className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 opacity-60 cursor-not-allowed">
+                        Official website currently unavailable
+                      </Button>
+                    )}
+                  </>
                 ) : (
-                  <Button variant="outline" fullWidth disabled className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 opacity-60 cursor-not-allowed">
-                    Official Source Unavailable
-                  </Button>
+                  isLinkAvailable ? (
+                    <a href={officialLink} target="_blank" rel="noopener noreferrer" className="block w-full">
+                      <Button variant="primary" fullWidth className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 cursor-pointer">
+                        Visit Official Portal <ExternalLink className="h-3.5 w-3.5" />
+                      </Button>
+                    </a>
+                  ) : (
+                    <Button variant="outline" fullWidth disabled className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 opacity-60 cursor-not-allowed">
+                      Official website currently unavailable
+                    </Button>
+                  )
                 )}
               </div>
 
@@ -765,12 +827,18 @@ export default function OpportunityDetails({ item, itemType, stateName, deptName
                 </Button>
               </Link>
               
-              {item.notification_url && (
-                <a href={item.notification_url} target="_blank" rel="noopener noreferrer" className="block w-full">
+              {isValidLink(item.notification_url) ? (
+                <a href={item.notification_url.startsWith('http') ? item.notification_url : `https://${item.notification_url}`} target="_blank" rel="noopener noreferrer" className="block w-full">
                   <Button variant="outline" fullWidth className="py-2.5 text-xs font-bold rounded-xl bg-white flex items-center justify-center gap-1.5 cursor-pointer dark:bg-slate-900">
                     <FileText className="h-4 w-4" /> View Official Notification
                   </Button>
                 </a>
+              ) : (
+                itemType === 'Exam' && (
+                  <Button variant="outline" fullWidth disabled className="py-2.5 text-xs font-bold rounded-xl bg-white flex items-center justify-center gap-1.5 opacity-60 cursor-not-allowed dark:bg-slate-900">
+                    Official website currently unavailable
+                  </Button>
+                )
               )}
 
               <Button 

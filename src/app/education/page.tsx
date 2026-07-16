@@ -5,33 +5,9 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, MapPin, RefreshCw, GraduationCap, Building, Trophy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { FALLBACK_STATES, State } from '@/lib/fallbackData';
+import { FALLBACK_STATES, FALLBACK_EDUCATION, State } from '@/lib/fallbackData';
 import Button from '@/components/ui/Button';
 import AdvancedFilterEngine, { HighlightText } from '@/components/ui/AdvancedFilterEngine';
-
-const FALLBACK_EDUCATION = [
-  {
-    id: '1',
-    name: 'National Institute of Technology (NIT)',
-    type: 'Government University',
-    details: 'Premier engineering institutes located across India.',
-    state: 'All India',
-  },
-  {
-    id: '2',
-    name: 'CUET (UG) 2026',
-    type: 'Entrance Exam',
-    details: 'Common University Entrance Test for undergraduate programs.',
-    state: 'All India',
-  },
-  {
-    id: '3',
-    name: 'Prime Minister Research Fellowship (PMRF)',
-    type: 'Fellowship',
-    details: 'Prestigious fellowship for PhD programs in premier institutes.',
-    state: 'All India',
-  }
-];
 
 export default function EducationPage() {
   const [education, setEducation] = useState<any[]>([]);
@@ -54,11 +30,35 @@ export default function EducationPage() {
           { data: eduData },
           { data: statesData }
         ] = await Promise.all([
-          supabase.from('education').select('*'),
+          supabase.from('education').select('*, states(name)'),
           supabase.from('states').select('*')
         ]);
         
-        setEducation(eduData && eduData.length > 0 ? eduData : FALLBACK_EDUCATION);
+        const resolvedEducation = (eduData && eduData.length > 0 ? eduData : FALLBACK_EDUCATION).map((item: any) => {
+          const eduName = item.title || item.name || '';
+          const fallback = FALLBACK_EDUCATION.find(fe => 
+            fe.name.toLowerCase().split(' ')[0] === eduName.toLowerCase().split(' ')[0]
+          ) || FALLBACK_EDUCATION[0];
+          
+          const merged = { ...fallback };
+          for (const key in item) {
+            if (item[key] !== null && item[key] !== undefined && item[key] !== '') {
+              if (key === 'title') {
+                merged.name = item[key];
+              } else if (key === 'official_website') {
+                merged.website = item[key];
+              } else {
+                (merged as any)[key] = item[key];
+              }
+            }
+          }
+          if (item.states?.name) {
+            merged.state = item.states.name;
+          }
+          return merged;
+        });
+
+        setEducation(resolvedEducation);
         setStates(statesData && statesData.length > 0 ? statesData : FALLBACK_STATES);
       } catch (err) {
         console.error('Failed to query Supabase on education, falling back:', err);

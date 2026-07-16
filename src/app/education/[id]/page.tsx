@@ -5,44 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
 import { api } from '@/services/api';
 import { supabase } from '@/lib/supabase';
+import { FALLBACK_EDUCATION, FALLBACK_STATES } from '@/lib/fallbackData';
 import Button from '@/components/ui/Button';
 import OpportunityDetails from '@/components/opportunity/OpportunityDetails';
-
-const FALLBACK_EDUCATION = [
-  {
-    id: '1',
-    name: 'National Institute of Technology (NIT)',
-    type: 'Government University',
-    details: 'Premier engineering institutes located across India offering Undergraduate, Postgraduate, and Doctorate degrees in various engineering and technology branches.',
-    state: 'All India',
-    website: 'https://www.nitcouncil.org.in',
-    admission_criteria: 'Admissions are made based on ranks secured in Joint Entrance Examination - Main (JEE Main) through JoSAA counseling.',
-    programs: 'B.Tech, M.Tech, MCA, MBA, Ph.D.',
-    facilities: 'Hostel accommodation, state-of-the-art libraries, high-performance computing centers, research laboratories, sports complexes.'
-  },
-  {
-    id: '2',
-    name: 'CUET (UG) 2026',
-    type: 'Entrance Exam',
-    details: 'Common University Entrance Test for admission to undergraduate programs in Central, State, Private, and Deemed Universities across India.',
-    state: 'All India',
-    website: 'https://cuet.samarth.ac.in',
-    admission_criteria: 'Computer-based examination testing Section IA & IB (Languages), Section II (Domain Specific Subjects), Section III (General Test).',
-    programs: 'Undergraduate degrees (BA, B.Sc, B.Com, BBA, BCA, etc.) in participating institutions.',
-    facilities: 'Exam help centers, reservations as per government norms, online mock test platforms.'
-  },
-  {
-    id: '3',
-    name: 'Prime Minister Research Fellowship (PMRF)',
-    type: 'Fellowship',
-    details: 'PMRF scheme has been designed for improving the quality of research in various higher educational institutions in the country.',
-    state: 'All India',
-    website: 'https://pmrf.in',
-    admission_criteria: 'Direct entry or Lateral entry for students who have completed or are pursuing B.Tech/M.Sc/M.Tech in IISc, IITs, NITs, IISERs, IIITs with high CGPA/GATE score.',
-    programs: 'Ph.D. fellowships in science and technology fields.',
-    facilities: 'Fellowship of ₹70,000 - ₹80,000 per month, research contingency grant of ₹2 Lakhs per year.'
-  }
-];
 
 export default function EducationDetailPage() {
   const params = useParams();
@@ -53,6 +18,7 @@ export default function EducationDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!id) return;
     async function loadData() {
       setIsLoading(true);
       try {
@@ -64,7 +30,23 @@ export default function EducationDetailPage() {
             fe.name.toLowerCase().split(' ')[0] === eduName.toLowerCase().split(' ')[0]
           ) || FALLBACK_EDUCATION[0];
           
-          setItem({ ...fallback, ...eduData, state: eduData.states?.name || fallback.state });
+          const eduDataAny = eduData as any;
+          const merged = { ...fallback } as any;
+          for (const key in eduDataAny) {
+            if (eduDataAny[key] !== null && eduDataAny[key] !== undefined && eduDataAny[key] !== '') {
+              if (key === 'title') {
+                merged.name = eduDataAny[key];
+              } else if (key === 'official_website') {
+                merged.website = eduDataAny[key];
+              } else {
+                merged[key] = eduDataAny[key];
+              }
+            }
+          }
+          if (eduData.states?.name) {
+            merged.state = eduData.states.name;
+          }
+          setItem(merged);
         } else {
           const fallback = FALLBACK_EDUCATION.find(e => e.id === id);
           if (fallback) setItem(fallback);
