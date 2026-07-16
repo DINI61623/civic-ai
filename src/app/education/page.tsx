@@ -140,7 +140,7 @@ export default function EducationPage() {
                         </Button>
                       </Link>
                       {item.website && (
-                        <a href={item.website} target="_blank" rel="noopener noreferrer" className="flex-1">
+                        <a href={item.website?.startsWith('http') ? item.website : `https://${item.website}`} target="_blank" rel="noopener noreferrer" className="flex-1">
                           <Button variant="primary" fullWidth className="text-xs py-2 min-h-[40px] rounded-xl font-extrabold cursor-pointer">
                             Visit Website
                           </Button>

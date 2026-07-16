@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { X, Mail, Landmark, Loader2, Lock, Eye, EyeOff, User, AlertCircle, CheckCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import Button from '@/components/ui/Button';
@@ -135,7 +136,7 @@ export default function AuthModal({ isOpen, onClose, message }: { isOpen: boolea
         setTimeout(() => {
           onClose();
           const loggedUser = data.user;
-          const hasProfile = loggedUser?.user_metadata?.student_profile || loggedUser?.user_metadata?.farmer_profile || loggedUser?.user_metadata?.user_type;
+          const hasProfile = loggedUser?.user_metadata?.student_profile || loggedUser?.user_metadata?.farmer_profile;
           
           if (!hasProfile) {
             router.push('/profile-completion');
@@ -185,7 +186,7 @@ export default function AuthModal({ isOpen, onClose, message }: { isOpen: boolea
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-card w-full max-w-md rounded-3xl shadow-[0_20px_60px_rgb(0,0,0,0.15)] overflow-y-auto max-h-[90vh] pointer-events-auto border border-border"
+              className="bg-card/95 backdrop-blur-xl w-full max-w-md rounded-3xl shadow-[0_20px_60px_rgb(0,0,0,0.15)] overflow-y-auto max-h-[90vh] pointer-events-auto border border-border"
             >
               <div className="p-8 relative">
                 <button 
@@ -230,7 +231,7 @@ export default function AuthModal({ isOpen, onClose, message }: { isOpen: boolea
                   className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/95 hover:to-secondary/95 text-white font-extrabold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-3 text-xs cursor-pointer shadow-md shadow-primary/10 hover:shadow-lg focus:outline-none mb-5"
                 >
                   <div className="bg-white p-1 rounded-lg">
-                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-3.5 h-3.5" alt="Google" />
+                    <Image src="https://www.svgrepo.com/show/475656/google-color.svg" width={14} height={14} className="w-3.5 h-3.5" alt="Google" />
                   </div>
                   Continue with Google
                 </button>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
+import { api } from '@/services/api';
 import { supabase } from '@/lib/supabase';
 import { FALLBACK_EXAMS, FALLBACK_DEPARTMENTS, FALLBACK_STATES, Exam, Department, State } from '@/lib/fallbackData';
 import Button from '@/components/ui/Button';
@@ -22,43 +23,36 @@ export default function ExamDetailPage() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const { data: examData, error } = await supabase.from('exams').select('*').eq('id', id).single();
+        const examData = await api.getExamById(id);
         
         let targetExam: Exam | null = null;
+        let deptName = '';
+        let stateName = '';
 
-        if (examData && !error) {
+        if (examData) {
           const fallback = FALLBACK_EXAMS.find(fe => 
             fe.title.toLowerCase().split(' ')[0] === examData.title.toLowerCase().split(' ')[0]
           ) || FALLBACK_EXAMS[0];
           
           targetExam = { ...fallback, ...examData };
+          deptName = examData.departments?.name || '';
+          stateName = examData.states?.name || '';
         } else {
           const fallback = FALLBACK_EXAMS.find(e => e.id === id);
-          if (fallback) targetExam = fallback;
+          if (fallback) {
+            targetExam = fallback;
+            deptName = FALLBACK_DEPARTMENTS.find(d => d.id === fallback.department_id)?.name || '';
+            stateName = FALLBACK_STATES.find(s => s.id === fallback.state_id)?.name || '';
+          }
         }
 
         if (targetExam) {
           setExam(targetExam);
-          
-          const [
-            { data: deptsData },
-            { data: statesData }
-          ] = await Promise.all([
-            supabase.from('departments').select('*'),
-            supabase.from('states').select('*')
-          ]);
-
-          const deptsList = deptsData && deptsData.length > 0 ? deptsData : FALLBACK_DEPARTMENTS;
-          const statesList = statesData && statesData.length > 0 ? statesData : FALLBACK_STATES;
-
-          const matchedDept = deptsList.find(d => d.id === targetExam?.department_id);
-          const matchedState = statesList.find(s => s.id === targetExam?.state_id);
-          
-          if (matchedDept) setDept(matchedDept);
-          if (matchedState) setState(matchedState);
+          setDept(deptName ? { id: '', name: deptName } : null);
+          setState(stateName ? { id: '', name: stateName } : null);
         }
       } catch (err) {
-        console.error('Failed to resolve dynamic details from Supabase:', err);
+        console.error('Failed to resolve dynamic details from API:', err);
         const fallback = FALLBACK_EXAMS.find(e => e.id === id);
         if (fallback) {
           setExam(fallback);

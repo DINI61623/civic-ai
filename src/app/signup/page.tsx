@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -51,7 +52,7 @@ export default function SignUpPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      const hasProfile = user.user_metadata?.student_profile || user.user_metadata?.farmer_profile || user.user_metadata?.user_type;
+      const hasProfile = user.user_metadata?.student_profile || user.user_metadata?.farmer_profile;
       if (!hasProfile) {
         router.push('/profile-completion');
       } else {
@@ -209,7 +210,7 @@ export default function SignUpPage() {
           className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/95 hover:to-secondary/95 text-white font-extrabold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-3 text-sm cursor-pointer shadow-md shadow-primary/10 hover:shadow-lg focus:outline-none"
         >
           <div className="bg-white p-1 rounded-lg">
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-4 h-4" alt="Google Logo" />
+            <Image src="https://www.svgrepo.com/show/475656/google-color.svg" width={16} height={16} className="w-4 h-4" alt="Google Logo" />
           </div>
           Continue with Google
         </button>

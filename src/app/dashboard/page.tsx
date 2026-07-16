@@ -91,7 +91,13 @@ export default function Dashboard() {
         }
 
         setCurrentUser(user);
-        const userProfile = await api.getUserProfile() as any;
+        
+        // Load profile and bookmarks in parallel
+        const [userProfile, items] = await Promise.all([
+          api.getUserProfile(),
+          api.getSavedItems()
+        ]);
+        
         setProfile(userProfile || { email: user.email, full_name: user.user_metadata?.full_name || 'Citizen' });
 
         // Load profile from Supabase user auth metadata (secure DB storage)
@@ -116,9 +122,6 @@ export default function Dashboard() {
           }
           setStudentProfile(user.user_metadata.student_profile);
         }
-
-        // Fetch database bookmarks
-        const items = await api.getSavedItems();
         
         // Resolve saved items titles dynamically from fallback database
         const resolvedSavedItems = (items || []).map((savedItem: any) => {

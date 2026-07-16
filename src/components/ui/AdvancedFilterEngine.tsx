@@ -40,6 +40,14 @@ export default function AdvancedFilterEngine({ items, states, itemType, onFilter
   const [search, setSearch] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
   
   // Advanced filters state
   const [selectedQual, setSelectedQual] = useState('All');
@@ -97,6 +105,7 @@ export default function AdvancedFilterEngine({ items, states, itemType, onFilter
   // Clear all filters
   const handleClearAll = () => {
     setSearch('');
+    setDebouncedSearch('');
     setSelectedQual('All');
     setSelectedState('All');
     setSelectedCategory('All');
@@ -122,7 +131,7 @@ export default function AdvancedFilterEngine({ items, states, itemType, onFilter
 
     let result = items.filter(item => {
       // 1. Search Query
-      const q = search.toLowerCase();
+      const q = debouncedSearch.toLowerCase();
       const title = (item.title || item.name || '').toLowerCase();
       const desc = (item.description || item.details || '').toLowerCase();
       const elig = (item.eligibility || item.admission_criteria || '').toLowerCase();
@@ -282,6 +291,7 @@ export default function AdvancedFilterEngine({ items, states, itemType, onFilter
 
   const handleSuggestionClick = (title: string) => {
     setSearch(title);
+    setDebouncedSearch(title);
     saveSearch(title);
     setShowSuggestions(false);
   };
@@ -326,6 +336,7 @@ export default function AdvancedFilterEngine({ items, states, itemType, onFilter
             <button 
               onClick={() => {
                 setSearch('');
+                setDebouncedSearch('');
                 setShowSuggestions(false);
               }}
               className="absolute right-3.5 top-3.5 p-0.5 text-slate-400 hover:text-slate-650 rounded-full hover:bg-slate-100"
@@ -435,6 +446,7 @@ export default function AdvancedFilterEngine({ items, states, itemType, onFilter
             key={term}
             onClick={() => {
               setSearch(term);
+              setDebouncedSearch(term);
               saveSearch(term);
             }}
             className="text-[10px] font-bold border border-slate-200 hover:border-primary/20 bg-white hover:bg-primary/5 text-slate-600 hover:text-primary px-3 py-1 rounded-full transition-all cursor-pointer"

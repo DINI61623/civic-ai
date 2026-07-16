@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { FALLBACK_EXAMS, FALLBACK_STATES, Exam, State } from '@/lib/fallbackData';
 import Button from '@/components/ui/Button';
 import AdvancedFilterEngine, { HighlightText } from '@/components/ui/AdvancedFilterEngine';
+import SkeletonGrid from '@/components/ui/SkeletonGrid';
 
 export default function ExamsPage() {
   const [exams, setExams] = useState<Exam[]>([]);
@@ -90,17 +91,19 @@ export default function ExamsPage() {
 
       {/* Content Feeds */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4 bg-background select-none">
-          <RefreshCw className="h-8 w-8 text-primary animate-spin" />
-          <p className="text-sm text-foreground-muted font-bold">Synchronizing with live notification database...</p>
-        </div>
+        <SkeletonGrid count={6} />
       ) : (
         <>
           {filteredExams.length === 0 ? (
-            <div className="bg-white dark:bg-slate-850 border border-slate-200 p-12 rounded-3xl text-center shadow-[0_4px_20px_rgb(0,0,0,0.02)]">
-              <SlidersHorizontalIcon className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="font-bold text-foreground text-lg mb-2">No exams match your filters</h3>
-              <p className="text-sm text-foreground-muted mb-6">Try changing your domicile state or academic qualification to discover matching government notifications.</p>
+            <div className="bg-white dark:bg-slate-850 border border-slate-200 p-12 rounded-3xl text-center shadow-[0_4px_20px_rgb(0,0,0,0.02)] max-w-2xl mx-auto mt-8">
+              <div className="bg-slate-50 dark:bg-slate-800 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-5">
+                <SlidersHorizontalIcon className="h-10 w-10 text-slate-400" />
+              </div>
+              <h3 className="font-bold text-foreground text-xl mb-3">No matching exams found</h3>
+              <p className="text-sm text-foreground-muted mb-8 leading-relaxed">We couldn't find any exams matching your exact criteria. Try adjusting your domicile state or academic qualification to discover more notifications.</p>
+              <Button onClick={() => window.location.reload()} variant="outline" className="font-bold">
+                Clear Filters
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -159,7 +162,7 @@ export default function ExamsPage() {
                         </Button>
                       </Link>
                       {exam.apply_link && status.label !== 'Closed' && (
-                        <a href={exam.apply_link} target="_blank" rel="noopener noreferrer" className="flex-1">
+                        <a href={exam.apply_link?.startsWith('http') ? exam.apply_link : `https://${exam.apply_link}`} target="_blank" rel="noopener noreferrer" className="flex-1">
                           <Button variant="primary" fullWidth className="text-xs py-2 min-h-[40px] rounded-xl font-extrabold cursor-pointer">
                             Apply Now
                           </Button>

@@ -159,7 +159,7 @@ export default function ScholarshipsPage() {
                         </Button>
                       </Link>
                       {schol.apply_link && status.label !== 'Closed' && (
-                        <a href={schol.apply_link} target="_blank" rel="noopener noreferrer" className="flex-1">
+                        <a href={schol.apply_link?.startsWith('http') ? schol.apply_link : `https://${schol.apply_link}`} target="_blank" rel="noopener noreferrer" className="flex-1">
                           <Button variant="primary" fullWidth className="text-xs py-2 min-h-[40px] rounded-xl font-extrabold cursor-pointer">
                             Apply Now
                           </Button>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
+import { api } from '@/services/api';
 import { supabase } from '@/lib/supabase';
 import { FALLBACK_SCHEMES, FALLBACK_STATES, Scheme, State } from '@/lib/fallbackData';
 import Button from '@/components/ui/Button';
@@ -21,31 +22,32 @@ export default function SchemeDetailPage() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const { data: schemeData, error } = await supabase.from('schemes').select('*').eq('id', id).single();
+        const schemeData = await api.getSchemeById(id);
         
         let targetScheme: Scheme | null = null;
+        let stateName = '';
 
-        if (schemeData && !error) {
+        if (schemeData) {
           const fallback = FALLBACK_SCHEMES.find(fs => 
             fs.title.toLowerCase().split(' ')[0] === schemeData.title.toLowerCase().split(' ')[0]
           ) || FALLBACK_SCHEMES[0];
           
           targetScheme = { ...fallback, ...schemeData };
+          stateName = schemeData.states?.name || '';
         } else {
           const fallback = FALLBACK_SCHEMES.find(s => s.id === id);
-          if (fallback) targetScheme = fallback;
+          if (fallback) {
+            targetScheme = fallback;
+            stateName = FALLBACK_STATES.find(s => s.id === fallback.state_id)?.name || '';
+          }
         }
 
         if (targetScheme) {
           setScheme(targetScheme);
-          
-          const { data: statesData } = await supabase.from('states').select('*');
-          const statesList = statesData && statesData.length > 0 ? statesData : FALLBACK_STATES;
-          const matchedState = statesList.find(s => s.id === targetScheme?.state_id);
-          if (matchedState) setState(matchedState);
+          setState(stateName ? { id: '', name: stateName } : null);
         }
       } catch (err) {
-        console.error('Failed to resolve dynamic scheme details:', err);
+        console.error('Failed to resolve dynamic scheme details from API:', err);
         const fallback = FALLBACK_SCHEMES.find(s => s.id === id);
         if (fallback) {
           setScheme(fallback);

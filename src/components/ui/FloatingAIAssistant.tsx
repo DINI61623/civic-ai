@@ -40,7 +40,7 @@ export default function FloatingAIAssistant() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-8 right-8 w-[calc(100vw-32px)] max-w-[420px] h-[550px] bg-card rounded-3xl shadow-[0_20px_60px_rgb(0,0,0,0.12)] border border-border flex flex-col z-50 overflow-hidden"
+            className="fixed bottom-8 right-8 w-[calc(100vw-32px)] max-w-[420px] h-[550px] bg-card/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_60px_rgb(0,0,0,0.12)] border border-border flex flex-col z-50 overflow-hidden"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-primary to-secondary p-5 flex justify-between items-center relative overflow-hidden">

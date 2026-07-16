@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
+import { api } from '@/services/api';
 import { supabase } from '@/lib/supabase';
 import Button from '@/components/ui/Button';
 import OpportunityDetails from '@/components/opportunity/OpportunityDetails';
@@ -55,21 +56,21 @@ export default function EducationDetailPage() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const { data: eduData, error } = await supabase.from('education').select('*').eq('id', id).single();
+        const eduData = await api.getEducationById(id);
         
-        if (eduData && !error) {
+        if (eduData) {
           const eduName = eduData.title || eduData.name || '';
           const fallback = FALLBACK_EDUCATION.find(fe => 
             fe.name.toLowerCase().split(' ')[0] === eduName.toLowerCase().split(' ')[0]
           ) || FALLBACK_EDUCATION[0];
           
-          setItem({ ...fallback, ...eduData });
+          setItem({ ...fallback, ...eduData, state: eduData.states?.name || fallback.state });
         } else {
           const fallback = FALLBACK_EDUCATION.find(e => e.id === id);
           if (fallback) setItem(fallback);
         }
       } catch (err) {
-        console.error('Failed to resolve dynamic education details:', err);
+        console.error('Failed to resolve dynamic education details from API:', err);
         const fallback = FALLBACK_EDUCATION.find(e => e.id === id);
         if (fallback) setItem(fallback);
       } finally {

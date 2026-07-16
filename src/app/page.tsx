@@ -247,26 +247,26 @@ export default function Home() {
   useEffect(() => {
     async function loadHomepageData() {
       try {
-        const [examsData, schemesData, scholarshipsData, notificationsData, statsData, examsList, schemesList, scholarshipsList] = await Promise.all([
-          api.getTrendingExams(3).catch(() => []),
-          api.getLatestSchemes(3).catch(() => []),
-          api.getScholarships(undefined, undefined, undefined, 0, 3).catch(() => ({ data: [], count: 0 })),
-          api.getLatestNotifications(5).catch(() => []),
+        const [statsData, examsList, schemesList, scholarshipsList] = await Promise.all([
           api.getStatistics().catch(() => ({ examsCount: 24, schemesCount: 15, scholarshipsCount: 8, usersCount: 142 })),
           api.getExams(undefined, undefined, undefined, 0, 20).catch(() => ({ data: [], count: 0 })),
           api.getSchemes(undefined, undefined, undefined, 0, 20).catch(() => ({ data: [], count: 0 })),
           api.getScholarships(undefined, undefined, undefined, 0, 20).catch(() => ({ data: [], count: 0 }))
         ]);
         
-        setTrendingExams(examsData && examsData.length > 0 ? (examsData as Exam[]) : EXAMS_MOCK.slice(0, 3));
-        setLatestSchemes(schemesData && schemesData.length > 0 ? (schemesData as Scheme[]) : SCHEMES_MOCK.slice(0, 3));
-        setScholarships(scholarshipsData?.data && scholarshipsData.data.length > 0 ? (scholarshipsData.data as Scholarship[]) : SCHOLARSHIPS_MOCK.slice(0, 3));
-        setNotifications(notificationsData && notificationsData.length > 0 ? (notificationsData as Exam[]) : EXAMS_MOCK.slice(0, 5));
-        setStats(statsData);
+        const fetchedExams = examsList?.data && examsList.data.length > 0 ? (examsList.data as Exam[]) : EXAMS_MOCK;
+        const fetchedSchemes = schemesList?.data && schemesList.data.length > 0 ? (schemesList.data as Scheme[]) : SCHEMES_MOCK;
+        const fetchedScholarships = scholarshipsList?.data && scholarshipsList.data.length > 0 ? (scholarshipsList.data as Scholarship[]) : SCHOLARSHIPS_MOCK;
 
-        setAllExams(examsList?.data && examsList.data.length > 0 ? (examsList.data as Exam[]) : EXAMS_MOCK);
-        setAllSchemes(schemesList?.data && schemesList.data.length > 0 ? (schemesList.data as Scheme[]) : SCHEMES_MOCK);
-        setAllScholarships(scholarshipsList?.data && scholarshipsList.data.length > 0 ? (scholarshipsList.data as Scholarship[]) : SCHOLARSHIPS_MOCK);
+        setAllExams(fetchedExams);
+        setAllSchemes(fetchedSchemes);
+        setAllScholarships(fetchedScholarships);
+
+        setTrendingExams([...fetchedExams].sort((a, b) => (b.vacancies || 0) - (a.vacancies || 0)).slice(0, 3));
+        setLatestSchemes(fetchedSchemes.slice(0, 3));
+        setScholarships(fetchedScholarships.slice(0, 3));
+        setNotifications([...fetchedExams].sort((a, b) => new Date(b.notification_date || 0).getTime() - new Date(a.notification_date || 0).getTime()).slice(0, 5));
+        setStats(statsData);
       } catch (error) {
         console.error('Error fetching homepage data, using mock fallbacks:', error);
         setTrendingExams(EXAMS_MOCK.slice(0, 3));
@@ -823,7 +823,7 @@ export default function Home() {
                       {new Date(item.deadline).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'})}
                     </span>
                     <a 
-                      href={item.applyUrl}
+                      href={item.applyUrl?.startsWith('http') ? item.applyUrl : `https://${item.applyUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 rounded-xl transition-all flex items-center gap-1 cursor-pointer"
@@ -1119,7 +1119,7 @@ export default function Home() {
                         </Link>
                         
                         <a 
-                          href={item.officialWebsite}
+                          href={item.officialWebsite?.startsWith('http') ? item.officialWebsite : `https://${item.officialWebsite}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs font-bold text-center text-white bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer"
@@ -1327,7 +1327,7 @@ export default function Home() {
                       </span>
                     </div>
                     <Link href={`/exams/${exam.id}`} className="text-xs font-bold text-white bg-primary hover:bg-primary/90 px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-1 cursor-pointer">
-                      Apply Now <ArrowRight className="h-3.5 w-3.5" />
+                      View Details <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>
                 </div>

@@ -204,12 +204,8 @@ function AIAssistantContent() {
   // Scroll to bottom on new messages or loading state changes
   useEffect(() => {
     const scrollToBottom = () => {
-      if (messagesContainerRef.current) {
-        const container = messagesContainerRef.current;
-        container.scrollTo({
-          top: container.scrollHeight,
-          behavior: 'smooth'
-        });
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
     };
 
@@ -221,7 +217,7 @@ function AIAssistantContent() {
   }, [messages, isLoading]);
 
   const submitMessage = (queryText: string) => {
-    if (!queryText.trim()) return;
+    if (isLoading || !queryText.trim()) return;
 
     const userMsg: Message = { role: 'user', content: queryText };
     setMessages(prev => [...prev, userMsg]);
@@ -993,10 +989,13 @@ function AIAssistantContent() {
                 <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center shrink-0 border border-primary/20">
                   <Bot className="h-5 w-5 animate-pulse" />
                 </div>
-                <div className="bg-white border border-slate-200 p-4 rounded-2xl rounded-tl-sm flex items-center gap-2 shadow-sm shrink-0">
-                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                <div className="bg-white border border-slate-200 p-4 rounded-2xl rounded-tl-sm flex items-center gap-3 shadow-sm shrink-0">
+                  <span className="text-sm font-bold text-slate-500">Thinking</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
                 </div>
               </div>
             )}

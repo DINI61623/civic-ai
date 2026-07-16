@@ -304,7 +304,8 @@ export default function OpportunityDetails({ item, itemType, stateName, deptName
     ? ["Graduation Degree / Marksheets", "Entrance Admit Card", "Domicile Certificate", "Category Rank Certificate"]
     : (item.required_documents || ["10th Class Marksheet", "Graduation Transcripts", "Aadhaar Card", "Photo ID", "Category Certificate (if applicable)"])));
 
-  const officialLink = item.apply_link || item.website || item.official_website || item.notification_url || 'https://www.civicai.gov.in';
+  const rawLink = item.apply_link || item.website || item.official_website || item.notification_url || 'https://www.civicai.gov.in';
+  const officialLink = rawLink.startsWith('http') ? rawLink : `https://${rawLink}`;
 
   // Need Help Query Parameter URL
   const aiAssistantPromptUrl = `/ai-assistant?prompt=${encodeURIComponent(`Tell me about eligibility criteria, document checklist, and deadline status details for ${item.title || item.name}`)}`;

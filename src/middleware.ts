@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -44,8 +44,8 @@ export async function proxy(request: NextRequest) {
   const isAuthRoute = url.pathname === '/login' || url.pathname === '/signup'
 
   if (user) {
-    // Check if user has completed the essential profile steps (has a user_type metadata defined)
-    const hasProfile = !!user.user_metadata?.user_type
+    // Check if user has completed the essential profile steps
+    const hasProfile = !!(user.user_metadata?.student_profile || user.user_metadata?.farmer_profile)
 
     if (isAuthRoute) {
       if (hasProfile) {

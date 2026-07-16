@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
+import { api } from '@/services/api';
 import { supabase } from '@/lib/supabase';
 import { FALLBACK_SCHOLARSHIPS, FALLBACK_STATES, Scholarship, State } from '@/lib/fallbackData';
 import Button from '@/components/ui/Button';
@@ -21,31 +22,32 @@ export default function ScholarshipDetailPage() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const { data: scholarshipData, error } = await supabase.from('scholarships').select('*').eq('id', id).single();
+        const scholarshipData = await api.getScholarshipById(id);
         
         let targetScholarship: Scholarship | null = null;
+        let stateName = '';
 
-        if (scholarshipData && !error) {
+        if (scholarshipData) {
           const fallback = FALLBACK_SCHOLARSHIPS.find(fs => 
             fs.title.toLowerCase().split(' ')[0] === scholarshipData.title.toLowerCase().split(' ')[0]
           ) || FALLBACK_SCHOLARSHIPS[0];
           
           targetScholarship = { ...fallback, ...scholarshipData };
+          stateName = scholarshipData.states?.name || '';
         } else {
           const fallback = FALLBACK_SCHOLARSHIPS.find(s => s.id === id);
-          if (fallback) targetScholarship = fallback;
+          if (fallback) {
+            targetScholarship = fallback;
+            stateName = FALLBACK_STATES.find(s => s.id === fallback.state_id)?.name || '';
+          }
         }
 
         if (targetScholarship) {
           setScholarship(targetScholarship);
-          
-          const { data: statesData } = await supabase.from('states').select('*');
-          const statesList = statesData && statesData.length > 0 ? statesData : FALLBACK_STATES;
-          const matchedState = statesList.find(s => s.id === targetScholarship?.state_id);
-          if (matchedState) setState(matchedState);
+          setState(stateName ? { id: '', name: stateName } : null);
         }
       } catch (err) {
-        console.error('Failed to resolve dynamic scholarship details:', err);
+        console.error('Failed to resolve dynamic scholarship details from API:', err);
         const fallback = FALLBACK_SCHOLARSHIPS.find(s => s.id === id);
         if (fallback) {
           setScholarship(fallback);
