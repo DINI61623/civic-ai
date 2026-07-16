@@ -307,6 +307,8 @@ export default function OpportunityDetails({ item, itemType, stateName, deptName
   const rawLink = item.apply_link || item.website || item.official_website || item.notification_url || 'https://www.civicai.gov.in';
   const officialLink = rawLink.startsWith('http') ? rawLink : `https://${rawLink}`;
 
+  const isLinkAvailable = rawLink && !rawLink.includes('civicai.gov.in');
+
   // Need Help Query Parameter URL
   const aiAssistantPromptUrl = `/ai-assistant?prompt=${encodeURIComponent(`Tell me about eligibility criteria, document checklist, and deadline status details for ${item.title || item.name}`)}`;
 
@@ -729,11 +731,17 @@ export default function OpportunityDetails({ item, itemType, stateName, deptName
               </div>
 
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                <a href={officialLink} target="_blank" rel="noopener noreferrer" className="block w-full">
-                  <Button variant="primary" fullWidth className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 cursor-pointer">
-                    Visit Official Portal <ExternalLink className="h-3.5 w-3.5" />
+                {isLinkAvailable ? (
+                  <a href={officialLink} target="_blank" rel="noopener noreferrer" className="block w-full">
+                    <Button variant="primary" fullWidth className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 cursor-pointer">
+                      Visit Official Portal <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                  </a>
+                ) : (
+                  <Button variant="outline" fullWidth disabled className="py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1 opacity-60 cursor-not-allowed">
+                    Official Source Unavailable
                   </Button>
-                </a>
+                )}
               </div>
 
             </div>

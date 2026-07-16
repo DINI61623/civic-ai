@@ -179,7 +179,7 @@ function AIAssistantContent() {
       }
     }
     loadProfileFilters();
-  }, [dbData]);
+  }, []);
 
   // Lock the browser page scroll while inside the full-viewport AI Assistant page
   useEffect(() => {
@@ -244,8 +244,11 @@ function AIAssistantContent() {
         if (hasDocWords) {
           replyContent = `### Required Documents Checklist for **${title}** 📑\n\nTo apply for this opportunity, please prepare clean scanned copies of the following:\n\n1. **Aadhaar Card / Voter ID**: Required for national registry identification.\n2. **Educational Marksheets**: Graduation degree, 12th standard, or 10th matric certificates.\n3. **Domicile / Residence Certificate**: Verifies local state quota allocations.\n4. **Caste / Reservation Certificate** (if applicable): SC, ST, or OBC certificate for eligibility relaxation.\n5. **Family Income Certificate**: Necessary to qualify for income concessions and scholarships.\n6. **Recent Passport Photograph & Scanned Signature**: Keep file size under 500kb in JPEG format.\n\n*Would you like to know how to apply next?*`;
         } else if (hasApplyWords) {
-          const portal = lastDiscussedOpportunity.official_website || lastDiscussedOpportunity.website || 'https://www.civicai.gov.in';
-          replyContent = `### Application Process for **${title}** 🌐\n\nHere are the step-by-step guidelines to register:\n\n1. **Official Portal**: Navigate to the verified government link: [Official Website Portal](${portal}).\n2. **Candidate Account**: Register as a new applicant with your email and mobile verification OTP.\n3. **Fill Profile forms**: Complete educational details, personal info, and region settings.\n4. **Upload Attachments**: Attach your scanned documents checklist copies.\n5. **Verify & Transact**: Complete any required fee transactions online (NetBanking/UPI).\n6. **Print Confirmation slip**: Save a print copy of your final registration receipt for future verification.\n\n*Let me know if you need specific help with document uploads!*`;
+          const rawPortal = lastDiscussedOpportunity.official_website || lastDiscussedOpportunity.website || 'https://www.civicai.gov.in';
+          const isPortalValid = rawPortal && !rawPortal.includes('civicai.gov.in');
+          const portalLink = isPortalValid ? `[Official Website Portal](${rawPortal})` : '**Official Website Portal (Source Unavailable)**';
+          
+          replyContent = `### Application Process for **${title}** 🌐\n\nHere are the step-by-step guidelines to register:\n\n1. **Official Portal**: Navigate to the verified government link: ${portalLink}.\n2. **Candidate Account**: Register as a new applicant with your email and mobile verification OTP.\n3. **Fill Profile forms**: Complete educational details, personal info, and region settings.\n4. **Upload Attachments**: Attach your scanned documents checklist copies.\n5. **Verify & Transact**: Complete any required fee transactions online (NetBanking/UPI).\n6. **Print Confirmation slip**: Save a print copy of your final registration receipt for future verification.\n\n*Let me know if you need specific help with document uploads!*`;
         } else if (hasEligibleWords) {
           replyContent = `### Eligibility Summary for **${title}** 🎓\n\nHere are the active criteria conditions:\n\n• **Academic Qualifications**: Candidates require **${lastDiscussedOpportunity.qualification || lastDiscussedOpportunity.eligibility || 'Varies'}**.\n• **Age Constraints**: Limits are **${lastDiscussedOpportunity.age_limit || 'Varies by reservation category'}**.\n• **Eligible States**: Restricted to residents of **${lastDiscussedOpportunity.state || 'All India'}**.\n• **Income/Demographic Targets**: Open to **${lastDiscussedOpportunity.category || 'All Citizen Categories'}**.`;
         } else if (hasRelatedWords) {

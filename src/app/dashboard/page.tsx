@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -247,7 +247,7 @@ export default function Dashboard() {
   };
 
   // Generate dynamic, filtered recommendations based on profile criteria
-  const getPersonalizedFeeds = () => {
+  const getPersonalizedFeeds = useCallback(() => {
     const today = new Date('2026-07-15');
     
     // Mock regional arrays
@@ -314,7 +314,7 @@ export default function Dashboard() {
         dateObj: new Date(x.last_date!)
       }))
     };
-  };
+  }, [userType, farmerProfile, studentProfile]);
 
   if (loading) {
     return (
@@ -325,7 +325,7 @@ export default function Dashboard() {
     );
   }
 
-  const feeds = getPersonalizedFeeds();
+  const feeds = useMemo(() => getPersonalizedFeeds(), [getPersonalizedFeeds]);
   const completionPercent = calculateCompletion();
   const hasRecommendations = userType === 'farmer' 
     ? feeds.schemes.length > 0

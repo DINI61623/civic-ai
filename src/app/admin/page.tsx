@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -58,14 +59,62 @@ export default function AdminDashboard() {
   const [adminRole, setAdminRole] = useState<AdminRole>('Super Admin');
 
   // Lists state
-  const [exams, setExams] = useState<any[]>([]);
-  const [schemes, setSchemes] = useState<any[]>([]);
-  const [scholarships, setScholarships] = useState<any[]>([]);
-  const [education, setEducation] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [feedback, setFeedback] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [aiKb, setAiKb] = useState<any[]>([]);
+  const [exams, setExams] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('civicai_admin_exams');
+      return local ? JSON.parse(local) : FALLBACK_EXAMS.map(x => ({ ...x, status: 'Published' }));
+    }
+    return [];
+  });
+  const [schemes, setSchemes] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('civicai_admin_schemes');
+      return local ? JSON.parse(local) : FALLBACK_SCHEMES.map(x => ({ ...x, status: 'Published' }));
+    }
+    return [];
+  });
+  const [scholarships, setScholarships] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('civicai_admin_scholarships');
+      return local ? JSON.parse(local) : FALLBACK_SCHOLARSHIPS.map(x => ({ ...x, status: 'Published' }));
+    }
+    return [];
+  });
+  const [education, setEducation] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('civicai_admin_education');
+      return local ? JSON.parse(local) : FALLBACK_EDUCATION.map(x => ({ ...x, status: 'Published' }));
+    }
+    return [];
+  });
+  const [users, setUsers] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('civicai_admin_users');
+      return local ? JSON.parse(local) : FALLBACK_USERS;
+    }
+    return [];
+  });
+  const [feedback, setFeedback] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('civicai_admin_feedback');
+      return local ? JSON.parse(local) : FALLBACK_FEEDBACK;
+    }
+    return [];
+  });
+  const [notifications, setNotifications] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('civicai_admin_notifications');
+      return local ? JSON.parse(local) : FALLBACK_NOTIFICATIONS;
+    }
+    return [];
+  });
+  const [aiKb, setAiKb] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('civicai_admin_ai_kb');
+      return local ? JSON.parse(local) : FALLBACK_AI_KB;
+    }
+    return [];
+  });
 
   // Navigation module tabs
   const [activeModule, setActiveModule] = useState<'overview' | 'users' | 'exams' | 'scholarships' | 'schemes' | 'education' | 'updates' | 'notifications' | 'feedback' | 'ai_kb'>('overview');
@@ -96,26 +145,6 @@ export default function AdminDashboard() {
   const [formStatus, setFormStatus] = useState('Published');
   const [formExtra, setFormExtra] = useState(''); // benefits or admission criteria
 
-  // Load from localStorage or Fallback datasets
-  useEffect(() => {
-    const localEx = localStorage.getItem('civicai_admin_exams');
-    const localSch = localStorage.getItem('civicai_admin_scholarships');
-    const localScm = localStorage.getItem('civicai_admin_schemes');
-    const localEdu = localStorage.getItem('civicai_admin_education');
-    const localUsr = localStorage.getItem('civicai_admin_users');
-    const localFb = localStorage.getItem('civicai_admin_feedback');
-    const localNotif = localStorage.getItem('civicai_admin_notifications');
-    const localKb = localStorage.getItem('civicai_admin_ai_kb');
-
-    setExams(localEx ? JSON.parse(localEx) : FALLBACK_EXAMS.map(x => ({ ...x, status: 'Published' })));
-    setScholarships(localSch ? JSON.parse(localSch) : FALLBACK_SCHOLARSHIPS.map(x => ({ ...x, status: 'Published' })));
-    setSchemes(localScm ? JSON.parse(localScm) : FALLBACK_SCHEMES.map(x => ({ ...x, status: 'Published' })));
-    setEducation(localEdu ? JSON.parse(localEdu) : FALLBACK_EDUCATION.map(x => ({ ...x, status: 'Published' })));
-    setUsers(localUsr ? JSON.parse(localUsr) : FALLBACK_USERS);
-    setFeedback(localFb ? JSON.parse(localFb) : FALLBACK_FEEDBACK);
-    setNotifications(localNotif ? JSON.parse(localNotif) : FALLBACK_NOTIFICATIONS);
-    setAiKb(localKb ? JSON.parse(localKb) : FALLBACK_AI_KB);
-  }, []);
 
   // Toast utility helper
   const showToast = (message: string, type: 'success' | 'error') => {

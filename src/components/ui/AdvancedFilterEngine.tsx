@@ -125,6 +125,11 @@ export default function AdvancedFilterEngine({ items, states, itemType, onFilter
     return (item as any).source || (item as any).organization || (item as any).type || '';
   }).filter(Boolean)));
 
+  const onFilterChangeRef = useRef(onFilterChange);
+  useEffect(() => {
+    onFilterChangeRef.current = onFilterChange;
+  }, [onFilterChange]);
+
   // Master Filter & Sort Logic
   useEffect(() => {
     const today = new Date('2026-07-15'); // simulated current date
@@ -273,10 +278,10 @@ export default function AdvancedFilterEngine({ items, states, itemType, onFilter
       return 0;
     });
 
-    onFilterChange(result, search);
+    onFilterChangeRef.current(result, debouncedSearch);
   }, [
-    items, states, search, selectedQual, selectedState, selectedCategory, 
-    selectedDept, selectedOrg, selectedStatus, ageInput, sortBy, onFilterChange
+    items, states, debouncedSearch, selectedQual, selectedState, selectedCategory, 
+    selectedDept, selectedOrg, selectedStatus, ageInput, sortBy
   ]);
 
   // Live search autocomplete suggestions

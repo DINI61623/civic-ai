@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, MapPin, RefreshCw, GraduationCap, Building, Trophy } from 'lucide-react';
@@ -39,6 +39,11 @@ export default function EducationPage() {
   const [filteredEdu, setFilteredEdu] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleFilterChange = useCallback((filtered: any[], q: string) => {
+    setFilteredEdu(filtered);
+    setSearchQuery(q);
+  }, []);
 
   // Load datasets
   useEffect(() => {
@@ -81,10 +86,7 @@ export default function EducationPage() {
           items={education} 
           states={states} 
           itemType="Education" 
-          onFilterChange={(filtered, q) => {
-            setFilteredEdu(filtered);
-            setSearchQuery(q);
-          }} 
+          onFilterChange={handleFilterChange} 
         />
       </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, MapPin, RefreshCw } from 'lucide-react';
@@ -16,6 +16,11 @@ export default function ExamsPage() {
   const [filteredExams, setFilteredExams] = useState<Exam[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleFilterChange = useCallback((filtered: Exam[], q: string) => {
+    setFilteredExams(filtered);
+    setSearchQuery(q);
+  }, []);
 
   // Hydrate data from Supabase or Fallback
   useEffect(() => {
@@ -48,11 +53,20 @@ export default function ExamsPage() {
     loadData();
   }, []);
 
-  const getStatusBadge = (lastDateStr: string | null) => {
+  const getStatusBadge = (lastDateStr: string | null, startDateStr?: string | null) => {
+    const today = new Date('2026-07-15');
+    today.setHours(0,0,0,0);
+
+    if (startDateStr) {
+      const startDate = new Date(startDateStr);
+      startDate.setHours(0,0,0,0);
+      if (startDate > today) {
+        return { label: 'Upcoming', color: 'bg-blue-50 text-blue-700 border-blue-200' };
+      }
+    }
+
     if (!lastDateStr) return { label: 'Open', color: 'bg-green-50 text-green-700 border-green-200' };
     const lastDate = new Date(lastDateStr);
-    const today = new Date('2026-07-15'); // simulated current date
-    today.setHours(0,0,0,0);
     lastDate.setHours(0,0,0,0);
 
     if (lastDate < today) {
@@ -82,10 +96,7 @@ export default function ExamsPage() {
           items={exams} 
           states={states} 
           itemType="Exam" 
-          onFilterChange={(filtered, q) => {
-            setFilteredExams(filtered);
-            setSearchQuery(q);
-          }} 
+          onFilterChange={handleFilterChange} 
         />
       </div>
 
@@ -100,7 +111,7 @@ export default function ExamsPage() {
                 <SlidersHorizontalIcon className="h-10 w-10 text-slate-400" />
               </div>
               <h3 className="font-bold text-foreground text-xl mb-3">No matching exams found</h3>
-              <p className="text-sm text-foreground-muted mb-8 leading-relaxed">We couldn't find any exams matching your exact criteria. Try adjusting your domicile state or academic qualification to discover more notifications.</p>
+              <p className="text-sm text-foreground-muted mb-8 leading-relaxed">We couldn&apos;t find any exams matching your exact criteria. Try adjusting your domicile state or academic qualification to discover more notifications.</p>
               <Button onClick={() => window.location.reload()} variant="outline" className="font-bold">
                 Clear Filters
               </Button>
@@ -108,7 +119,7 @@ export default function ExamsPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredExams.map((exam) => {
-                const status = getStatusBadge(exam.last_date);
+                const status = getStatusBadge(exam.last_date, exam.start_date);
                 const stateObj = states.find(s => s.id === exam.state_id);
 
                 return (

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Exam, Scheme, Scholarship, State, Department } from './fallbackData';
 
 export interface ConversationFilters {

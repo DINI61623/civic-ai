@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -19,7 +20,13 @@ export default function GlobalSearch({ isOpen, onClose }: { isOpen: boolean, onC
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<{ exams: any[], schemes: any[], scholarships: any[], education: any[] }>({ exams: [], schemes: [], scholarships: [], education: [] });
   const [loading, setLoading] = useState(false);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('civicai_recent_searches');
+      if (stored) return JSON.parse(stored);
+    }
+    return [];
+  });
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -29,12 +36,10 @@ export default function GlobalSearch({ isOpen, onClose }: { isOpen: boolean, onC
       if (inputRef.current) {
         setTimeout(() => inputRef.current?.focus(), 100);
       }
-      const stored = localStorage.getItem('civicai_recent_searches');
-      if (stored) {
-        setRecentSearches(JSON.parse(stored));
-      }
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setQuery('');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults({ exams: [], schemes: [], scholarships: [], education: [] });
     }
   }, [isOpen]);
@@ -50,6 +55,7 @@ export default function GlobalSearch({ isOpen, onClose }: { isOpen: boolean, onC
   // Debounced API search triggers
   useEffect(() => {
     if (query.trim().length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults({ exams: [], schemes: [], scholarships: [], education: [] });
       return;
     }
