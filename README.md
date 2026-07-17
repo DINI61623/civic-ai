@@ -34,3 +34,13 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# MongoDB setup
+
+Application data is stored in MongoDB. Supabase is retained only for authentication.
+
+1. Copy `.env.example` to `.env.local` and set `MONGODB_URI` (MongoDB Atlas or a local server) and `MONGODB_DB`.
+2. Keep the Supabase variables configured so existing users can sign in.
+3. Run `npm run db:migrate` once to copy the current Supabase tables into MongoDB and create indexes.
+4. Start the app with `npm run dev`.
+
+`MONGODB_URI` is server-only. Never prefix it with `NEXT_PUBLIC_`.

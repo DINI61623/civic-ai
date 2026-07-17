@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F8FAFC;
+  --card: #FFFFFF;
+  --foreground: #0F172A;
+  --foreground-muted: #475569;
+  
+  --primary: #1E40AF;
+  --primary-foreground: #FFFFFF;
+  
+  --secondary: #4F46E5;
+  --secondary-foreground: #FFFFFF;
+  
+  --accent: #10B981;
+  --accent-foreground: #FFFFFF;
+
+  --border: #E2E8F0;
+  
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+
+  --slate-850: #FFFFFF;
+  --slate-250: #E2E8F0;
+}
+
+html.dark, .dark {
+  --background: #090D16;
+  --card: #111827;
+  --foreground: #F8FAFC;
+  --foreground-muted: #94A3B8;
+  --border: #1F2937;
+
+  --slate-850: #151D30;
+  --slate-250: #1F2937;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-border: var(--border);
+  
+  --color-slate-850: var(--slate-850);
+  --color-slate-250: var(--slate-250);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Force manual dark mode selection to ensure pure light premium theme is preserved */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
