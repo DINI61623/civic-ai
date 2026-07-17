@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
+
 import { X, Mail, Landmark, Loader2, Lock, Eye, EyeOff, User, AlertCircle, CheckCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import Button from '@/components/ui/Button';
@@ -154,22 +154,7 @@ export default function AuthModal({ isOpen, onClose, message }: { isOpen: boolea
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        }
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      setError(getFriendlyErrorMessage(err));
-      setLoading(false);
-    }
-  };
+
 
   return (
     <AnimatePresence>
@@ -225,23 +210,7 @@ export default function AuthModal({ isOpen, onClose, message }: { isOpen: boolea
                   </div>
                 )}
 
-                {/* Google Sign-in Styled as Prominent Action */}
-                <button 
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/95 hover:to-secondary/95 text-white font-extrabold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-3 text-xs cursor-pointer shadow-md shadow-primary/10 hover:shadow-lg focus:outline-none mb-5"
-                >
-                  <div className="bg-white p-1 rounded-lg">
-                    <Image src="https://www.svgrepo.com/show/475656/google-color.svg" width={14} height={14} className="w-3.5 h-3.5" alt="Google" />
-                  </div>
-                  Continue with Google
-                </button>
 
-                <div className="relative flex items-center py-1 mb-5">
-                  <div className="flex-grow border-t border-slate-150 dark:border-slate-800"></div>
-                  <span className="shrink-0 px-3 text-slate-400 dark:text-slate-500 text-[9px] font-bold uppercase tracking-wider">or email access</span>
-                  <div className="flex-grow border-t border-slate-150 dark:border-slate-800"></div>
-                </div>
 
                 <form onSubmit={handleEmailAuth} className="space-y-4">
                   {isSignUp && (
