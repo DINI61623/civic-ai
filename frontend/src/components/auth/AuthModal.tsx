@@ -110,6 +110,7 @@ export default function AuthModal({ isOpen, onClose, message }: { isOpen: boolea
           email: email.trim(),
           password,
           options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
             data: {
               full_name: fullName.trim()
             }
