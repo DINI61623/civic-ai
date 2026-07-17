@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getMockSupabaseClient, CookieStore } from './lib/supabase/mock'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -64,7 +64,7 @@ export async function middleware(request: NextRequest) {
   if (forwardedHost) {
     url.host = forwardedHost
     if (forwardedProto) {
-      url.protocol = forwardedProto
+      url.protocol = forwardedProto.endsWith(':') ? forwardedProto : `${forwardedProto}:`
     }
   }
 
