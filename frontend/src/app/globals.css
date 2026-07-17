@@ -34,6 +34,29 @@ html.dark, .dark {
 
   --slate-850: #151D30;
   --slate-250: #1F2937;
+
+  /*
+   * Override Tailwind slate palette so hardcoded text-slate-* classes
+   * automatically adapt to dark mode without touching every component.
+   * Values are flipped: what was dark (slate-700–950) becomes light,
+   * so text remains readable on the dark background.
+   */
+  --color-slate-50:  oklch(12.9% 0.042 264.695);
+  --color-slate-100: oklch(20.8% 0.042 265.755);
+  --color-slate-200: oklch(27.9% 0.041 260.031);
+  --color-slate-300: oklch(37.2% 0.044 257.287);
+  --color-slate-400: oklch(44.6% 0.043 257.281);
+  --color-slate-500: oklch(55.4% 0.046 257.417);
+  --color-slate-600: oklch(70.4% 0.04  256.788);
+  --color-slate-700: oklch(86.9% 0.022 252.894);
+  --color-slate-800: oklch(92.9% 0.013 255.508);
+  --color-slate-900: oklch(96.8% 0.007 247.896);
+  --color-slate-950: oklch(98.4% 0.003 247.858);
+
+  /* Also remap pure white so bg-white cards adapt to the dark card color */
+  --color-white: #111827;
+
+
 }
 
 @theme inline {
