@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { api } from '@/services/api';
-import { 
-  User, Lock, Bell, Moon, Shield, Trash2, Download, CheckCircle, 
+import {
+  User, Lock, Bell, Moon, Shield, Trash2, Download, CheckCircle,
   AlertCircle, Loader2, Landmark, Globe, ChevronRight, ArrowLeft
 } from 'lucide-react';
 import { FALLBACK_STATES } from '@/lib/fallbackData';
@@ -16,8 +16,8 @@ import { useLanguage } from '@/components/providers/LanguageProvider';
 import type { SupportedLanguage } from '@/lib/translations';
 
 const INTEREST_OPTIONS = [
-  'UPSC', 'SSC', 'Banking', 'Railways', 'Defence', 'PSU', 
-  'State Government Jobs', 'Engineering Jobs', 'IT Jobs', 
+  'UPSC', 'SSC', 'Banking', 'Railways', 'Defence', 'PSU',
+  'State Government Jobs', 'Engineering Jobs', 'IT Jobs',
   'Scholarships', 'Higher Education', 'Skill Development'
 ];
 
@@ -30,7 +30,7 @@ export default function SettingsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'language' | 'notifications' | 'theme' | 'privacy' | 'account'>('profile');
-  
+
   // Success/Error toast states
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -121,7 +121,7 @@ export default function SettingsPage() {
   }, [router]);
 
   const handleInterestToggle = (interest: string) => {
-    setInterests(prev => 
+    setInterests(prev =>
       prev.includes(interest) ? prev.filter(i => i !== interest) : [...prev, interest]
     );
   };
@@ -197,9 +197,9 @@ export default function SettingsPage() {
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.updateUser({ password: newPassword });
-      
+
       if (error) throw error;
-      
+
       setSaveSuccess(true);
       setNewPassword('');
       setConfirmPassword('');
@@ -218,7 +218,7 @@ export default function SettingsPage() {
     setIsUpdating(true);
     try {
       const supabase = createClient();
-      const updatedProfile = userType === 'farmer' 
+      const updatedProfile = userType === 'farmer'
         ? { ...currentUser.user_metadata.farmer_profile, language: lang }
         : { ...currentUser.user_metadata.student_profile, language: lang };
 
@@ -357,9 +357,9 @@ export default function SettingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl relative select-none">
-      
+
       {/* Back button */}
-      <button 
+      <button
         onClick={() => router.push('/dashboard')}
         className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary mb-6 transition-colors cursor-pointer group"
       >
@@ -372,7 +372,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        
+
         {/* Tabs Sidebar */}
         <div className="md:col-span-1 space-y-1 select-none">
           {tabs.map((tab) => {
@@ -385,11 +385,10 @@ export default function SettingsPage() {
                   setSaveError('');
                   setSaveSuccess(false);
                 }}
-                className={`w-full text-left flex items-center gap-3 px-4 py-3 text-xs font-extrabold uppercase tracking-wider rounded-2xl transition-all cursor-pointer border ${
-                  activeTab === tab.id
+                className={`w-full text-left flex items-center gap-3 px-4 py-3 text-xs font-extrabold uppercase tracking-wider rounded-2xl transition-all cursor-pointer border ${activeTab === tab.id
                     ? 'bg-primary/5 border-primary/20 text-primary'
                     : 'border-transparent text-slate-400 hover:text-slate-650 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Icon className="h-4.5 w-4.5" />
                 <span>{tab.name}</span>
@@ -400,7 +399,7 @@ export default function SettingsPage() {
 
         {/* Content Pane */}
         <div className="md:col-span-3 bg-card border border-border rounded-3xl p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.02)] min-h-[480px] flex flex-col">
-          
+
           {/* Notifications area */}
           {saveSuccess && (
             <div className="mb-6 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold p-4 rounded-xl flex items-center gap-2 select-none">
@@ -423,12 +422,12 @@ export default function SettingsPage() {
               <form onSubmit={handleSaveProfile} className="space-y-6">
                 <div>
                   <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-400 mb-4 select-none">Profile Calibration</h3>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-1.5">Full Name</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
@@ -439,7 +438,7 @@ export default function SettingsPage() {
 
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-1.5">Domicile State</label>
-                      <select 
+                      <select
                         required
                         value={stateId}
                         onChange={(e) => setStateId(e.target.value)}
@@ -456,8 +455,8 @@ export default function SettingsPage() {
                       <>
                         <div>
                           <label className="block text-xs font-bold text-slate-500 mb-1.5">District / City</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             required
                             value={district}
                             onChange={(e) => setDistrict(e.target.value)}
@@ -468,7 +467,7 @@ export default function SettingsPage() {
 
                         <div>
                           <label className="block text-xs font-bold text-slate-500 mb-1.5">Reservation Category</label>
-                          <select 
+                          <select
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
                             className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-primary cursor-pointer"
@@ -483,7 +482,7 @@ export default function SettingsPage() {
 
                         <div className="sm:col-span-2">
                           <label className="block text-xs font-bold text-slate-500 mb-1.5">Highest Qualification</label>
-                          <select 
+                          <select
                             value={highestQualification}
                             onChange={(e) => setHighestQualification(e.target.value)}
                             className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-primary cursor-pointer"
@@ -506,11 +505,10 @@ export default function SettingsPage() {
                                   key={opt}
                                   type="button"
                                   onClick={() => handleInterestToggle(opt)}
-                                  className={`text-xs font-bold py-2 px-4 rounded-xl border transition-all cursor-pointer ${
-                                    selected 
+                                  className={`text-xs font-bold py-2 px-4 rounded-xl border transition-all cursor-pointer ${selected
                                       ? 'bg-primary/5 border-primary text-primary'
                                       : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-350'
-                                  }`}
+                                    }`}
                                 >
                                   {opt}
                                 </button>
@@ -523,7 +521,7 @@ export default function SettingsPage() {
                       <>
                         <div>
                           <label className="block text-xs font-bold text-slate-500 mb-1.5">Farming Category Type</label>
-                          <select 
+                          <select
                             value={farmingType}
                             onChange={(e) => setFarmingType(e.target.value)}
                             className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-primary cursor-pointer"
@@ -541,9 +539,9 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="pt-4 border-t border-slate-100 flex justify-end select-none">
-                  <Button 
-                    type="submit" 
-                    variant="primary" 
+                  <Button
+                    type="submit"
+                    variant="primary"
                     isLoading={isUpdating}
                     className="min-h-[44px] px-6 text-xs font-bold rounded-xl cursor-pointer"
                   >
@@ -561,8 +559,8 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 gap-4 max-w-md">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-1.5">New Password</label>
-                      <input 
-                        type="password" 
+                      <input
+                        type="password"
                         required
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
@@ -573,8 +571,8 @@ export default function SettingsPage() {
 
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-1.5">Verify Password</label>
-                      <input 
-                        type="password" 
+                      <input
+                        type="password"
                         required
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
@@ -586,9 +584,9 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="pt-4 border-t border-slate-100 flex justify-end select-none">
-                  <Button 
-                    type="submit" 
-                    variant="primary" 
+                  <Button
+                    type="submit"
+                    variant="primary"
                     isLoading={isUpdating}
                     className="min-h-[44px] px-6 text-xs font-bold rounded-xl cursor-pointer"
                   >
@@ -604,7 +602,7 @@ export default function SettingsPage() {
                 <div>
                   <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-400 mb-4 select-none">{t('settings.language_title')}</h3>
                   <p className="text-xs text-slate-400 font-semibold mb-4 leading-normal">{t('settings.language_subtitle')}</p>
-                  
+
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {LANGUAGE_OPTIONS.map((lang) => {
                       const active = language === lang;
@@ -613,15 +611,14 @@ export default function SettingsPage() {
                           key={lang}
                           onClick={() => handleUpdateLanguage(lang as SupportedLanguage)}
                           disabled={isUpdating}
-                          className={`flex items-center justify-between p-4 rounded-2xl border text-xs font-bold transition-all cursor-pointer ${
-                            active 
+                          className={`flex items-center justify-between p-4 rounded-2xl border text-xs font-bold transition-all cursor-pointer ${active
                               ? 'bg-primary/5 border-primary text-primary dark:bg-primary/10 dark:border-primary dark:text-white'
                               : 'bg-white border-slate-200 hover:border-slate-350 text-slate-650 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600'
-                          } disabled:opacity-60`}
+                            } disabled:opacity-60`}
                         >
                           <span>{lang}</span>
                           {active && (
-                            isUpdating 
+                            isUpdating
                               ? <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
                               : <CheckCircle className="h-4.5 w-4.5 text-primary shrink-0" />
                           )}
@@ -645,16 +642,16 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <div>
                   <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-400 mb-4 select-none">Alert notifications preferences</h3>
-                  
+
                   <div className="space-y-4">
                     <label className="flex items-center justify-between cursor-pointer py-1.5 border-b border-slate-50 max-w-xl">
                       <div>
                         <span className="text-xs font-bold text-slate-700 block">Email Notifications</span>
                         <span className="text-[10px] text-slate-400 block mt-0.5">Receive reminders regarding saved opportunities and updates.</span>
                       </div>
-                      <input 
-                        type="checkbox" 
-                        checked={emailAlerts} 
+                      <input
+                        type="checkbox"
+                        checked={emailAlerts}
                         onChange={(e) => setEmailAlerts(e.target.checked)}
                         className="rounded border-slate-300 text-primary focus:ring-primary h-4.5 w-4.5 cursor-pointer"
                       />
@@ -665,9 +662,9 @@ export default function SettingsPage() {
                         <span className="text-xs font-bold text-slate-700 block">Web Push updates</span>
                         <span className="text-[10px] text-slate-400 block mt-0.5">Enable browser notification alerts for close dates.</span>
                       </div>
-                      <input 
-                        type="checkbox" 
-                        checked={pushAlerts} 
+                      <input
+                        type="checkbox"
+                        checked={pushAlerts}
                         onChange={(e) => setPushAlerts(e.target.checked)}
                         className="rounded border-slate-300 text-primary focus:ring-primary h-4.5 w-4.5 cursor-pointer"
                       />
@@ -690,9 +687,9 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="pt-4 border-t border-slate-100 flex justify-end select-none">
-                  <Button 
+                  <Button
                     onClick={handleSaveNotifications}
-                    variant="primary" 
+                    variant="primary"
                     isLoading={isUpdating}
                     className="min-h-[44px] px-6 text-xs font-bold rounded-xl cursor-pointer"
                   >
@@ -708,7 +705,7 @@ export default function SettingsPage() {
                 <div>
                   <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-400 mb-4 select-none">Application Styling Theme</h3>
                   <p className="text-xs text-slate-400 font-semibold mb-4 leading-normal">System customization selectors (Ready for future light/dark migrations).</p>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {['light', 'dark', 'system'].map((mode) => {
                       const active = themeMode === mode;
@@ -716,11 +713,10 @@ export default function SettingsPage() {
                         <button
                           key={mode}
                           onClick={() => handleSaveTheme(mode)}
-                          className={`flex flex-col items-start gap-1 p-5 rounded-2xl border text-xs font-bold transition-all capitalize cursor-pointer text-left ${
-                            active 
+                          className={`flex flex-col items-start gap-1 p-5 rounded-2xl border text-xs font-bold transition-all capitalize cursor-pointer text-left ${active
                               ? 'bg-primary/5 border-primary text-primary dark:bg-primary/10 dark:border-primary dark:text-white'
                               : 'bg-white border-slate-200 hover:border-slate-350 text-slate-650 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600'
-                          }`}
+                            }`}
                         >
                           <span className="text-xs uppercase font-extrabold">{mode} Mode</span>
                           <span className="text-[10px] text-slate-400 mt-1 font-medium leading-relaxed">
@@ -739,12 +735,12 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <div>
                   <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-400 mb-4 select-none">Privacy & Data Governance</h3>
-                  
+
                   <div className="space-y-4 max-w-xl">
                     <label className="flex items-start gap-3 cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={shareData} 
+                      <input
+                        type="checkbox"
+                        checked={shareData}
                         onChange={(e) => handleSavePrivacy(e.target.checked)}
                         className="rounded border-slate-300 text-primary focus:ring-primary h-4.5 w-4.5 mt-0.5 cursor-pointer"
                       />
@@ -774,16 +770,16 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <div>
                   <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-400 mb-4 select-none">Account Administration</h3>
-                  
+
                   <div className="space-y-4 max-w-xl">
                     <div className="p-5 border border-slate-200 dark:border-slate-700 rounded-3xl space-y-3.5">
                       <h4 className="font-bold text-xs text-slate-750">Export Profile Archive Data</h4>
                       <p className="text-[10.5px] text-slate-500 leading-relaxed font-semibold">
                         Download a machine-readable JSON copy of your saved credentials, preferences, and checklist logs.
                       </p>
-                      <Button 
+                      <Button
                         onClick={handleExportData}
-                        variant="outline" 
+                        variant="outline"
                         className="text-xs font-bold py-2 px-4 rounded-xl flex items-center gap-1.5 cursor-pointer"
                       >
                         <Download className="h-4 w-4" /> Export Data
@@ -795,7 +791,7 @@ export default function SettingsPage() {
                       <p className="text-[10.5px] text-slate-500 leading-relaxed font-semibold">
                         Completely remove your user metadata profile, custom settings, notifications, and tracking dashboards from live databases. This action is irreversible.
                       </p>
-                      <button 
+                      <button
                         onClick={() => setShowDeleteConfirm(true)}
                         className="text-xs font-extrabold text-white bg-rose-600 hover:bg-rose-600/90 py-2 px-4 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm shadow-rose-200 border-none"
                       >
@@ -822,14 +818,14 @@ export default function SettingsPage() {
               Are you absolutely sure you want to delete your CivicAI profile? All of your saved opportunities checklist items, and profile metadata settings will be destroyed. This cannot be undone.
             </p>
             <div className="flex items-center justify-end gap-3 mt-6">
-              <Button 
+              <Button
                 onClick={() => setShowDeleteConfirm(false)}
-                variant="outline" 
+                variant="outline"
                 className="text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer"
               >
                 Cancel
               </Button>
-              <button 
+              <button
                 onClick={handleDeleteAccount}
                 className="text-xs font-extrabold text-white bg-rose-600 hover:bg-rose-605 py-2.5 px-4 rounded-xl cursor-pointer shadow-sm shadow-rose-100 border-none"
               >
