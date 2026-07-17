@@ -58,6 +58,16 @@ export async function middleware(request: NextRequest) {
 
   const url = request.nextUrl.clone()
 
+  // Fix proxy redirection (Render forwarding to localhost:10000)
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const forwardedProto = request.headers.get('x-forwarded-proto')
+  if (forwardedHost) {
+    url.host = forwardedHost
+    if (forwardedProto) {
+      url.protocol = forwardedProto
+    }
+  }
+
   const isProtectedRoute = !url.pathname.startsWith('/login') && 
                            !url.pathname.startsWith('/signup') && 
                            !url.pathname.startsWith('/auth/callback') &&
