@@ -6,9 +6,10 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Eye, EyeOff, Mail, Lock, Landmark, 
-  AlertCircle, CheckCircle 
+  AlertCircle, CheckCircle, Award, Sparkles, ChevronRight 
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
@@ -38,6 +39,30 @@ const getFriendlyErrorMessage = (error: any) => {
   return message;
 };
 
+const SLIDES = [
+  {
+    title: "AI-Powered Citizen Assistance",
+    subtitle: "Customized for Indian Citizens",
+    description: "Access regional translations, crop subsidies, government job exams, and scholarships tailored directly to your state and profile.",
+    icon: Landmark,
+    color: "from-blue-500/10 to-indigo-500/10 text-primary"
+  },
+  {
+    title: "Calculate Match Scores",
+    subtitle: "Know Your Eligibility Instantly",
+    description: "Our matching engine evaluates educational criteria, age limits, and category rules to compute matching scores for every opportunity.",
+    icon: Award,
+    color: "from-purple-500/10 to-pink-500/10 text-purple-600"
+  },
+  {
+    title: "Multilingual Voice AI",
+    subtitle: "Speak in Your Preferred Language",
+    description: "Ask queries and listen to voice updates in regional languages like Hindi, Telugu, Tamil, Marathi, Punjabi, and Bengali.",
+    icon: Sparkles,
+    color: "from-emerald-500/10 to-teal-500/10 text-emerald-600"
+  }
+];
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,6 +72,24 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
+  // Onboarding Slides state
+  const [showAuthForm, setShowAuthForm] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const nextSlide = () => {
+    if (currentSlide < SLIDES.length - 1) {
+      setCurrentSlide(prev => prev + 1);
+    } else {
+      setShowAuthForm(true);
+    }
+  };
+
+  const prevSlide = () => {
+    if (currentSlide > 0) {
+      setCurrentSlide(prev => prev - 1);
+    }
+  };
+
   // Forgot Password state toggle
   const [isForgotMode, setIsForgotMode] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
@@ -165,6 +208,106 @@ export default function LoginPage() {
       setForgotLoading(false);
     }
   };
+
+  if (!showAuthForm) {
+    const ActiveIcon = SLIDES[currentSlide].icon;
+    return (
+      <div className="min-h-[85vh] flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900/40 relative overflow-hidden">
+        {/* Decorative Orbs */}
+        <div className="absolute top-10 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-10 right-10 w-80 h-80 bg-secondary/5 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="max-w-md w-full bg-white dark:bg-slate-850 p-8 sm:p-10 rounded-3xl shadow-[0_4px_30px_rgba(0,0,0,0.03)] border border-slate-200/80 dark:border-slate-800 z-10 flex flex-col min-h-[500px] justify-between">
+          
+          {/* Header */}
+          <div className="flex justify-between items-center select-none">
+            <div className="flex items-center gap-2">
+              <div className="bg-gradient-to-br from-primary to-secondary p-2 rounded-xl shadow-sm">
+                <Landmark className="h-4 w-4 text-white" />
+              </div>
+              <span className="font-extrabold text-foreground tracking-tight text-sm">CivicAI</span>
+            </div>
+            <button 
+              onClick={() => setShowAuthForm(true)}
+              className="text-xs font-bold text-primary hover:underline cursor-pointer focus:outline-none bg-transparent border-0"
+            >
+              Skip
+            </button>
+          </div>
+
+          {/* Slide Content */}
+          <div className="my-8 text-center flex-1 flex flex-col justify-center items-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentSlide}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.25 }}
+                className="flex flex-col items-center"
+              >
+                <div className={`p-5 rounded-3xl bg-gradient-to-br ${SLIDES[currentSlide].color} mb-6`}>
+                  <ActiveIcon className="h-10 w-10" />
+                </div>
+                
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1 select-none">
+                  {SLIDES[currentSlide].subtitle}
+                </span>
+                
+                <h2 className="text-xl md:text-2xl font-black text-slate-800 dark:text-white leading-tight mb-3">
+                  {SLIDES[currentSlide].title}
+                </h2>
+                
+                <p className="text-xs md:text-sm text-slate-550 dark:text-slate-400 font-medium leading-relaxed max-w-sm">
+                  {SLIDES[currentSlide].description}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Bottom Actions */}
+          <div className="space-y-6 select-none">
+            {/* Dots */}
+            <div className="flex justify-center gap-2">
+              {SLIDES.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentSlide(i)}
+                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                    i === currentSlide ? 'w-6 bg-primary' : 'w-1.5 bg-slate-200 dark:bg-slate-700'
+                  }`}
+                  aria-label={`Go to slide ${i + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex gap-3">
+              {currentSlide > 0 ? (
+                <button
+                  onClick={prevSlide}
+                  className="flex-1 min-h-[44px] border border-slate-200 dark:border-slate-800 text-slate-655 dark:text-slate-350 text-xs font-extrabold rounded-xl transition-all cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  Back
+                </button>
+              ) : null}
+              
+              <Button
+                onClick={nextSlide}
+                variant="primary"
+                className="flex-1 min-h-[44px] font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer select-none"
+              >
+                {currentSlide === SLIDES.length - 1 ? 'Get Started' : 'Next'}
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900/40 relative overflow-hidden">
