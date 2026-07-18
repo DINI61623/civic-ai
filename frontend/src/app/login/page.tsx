@@ -62,7 +62,7 @@ export default function LoginPage() {
       if (!hasProfile) {
         router.push('/profile-completion');
       } else {
-        router.push('/dashboard');
+        router.push('/');
       }
     }
   }, [user, router]);
@@ -102,7 +102,7 @@ export default function LoginPage() {
         if (!hasProfile) {
           router.push('/profile-completion');
         } else {
-          router.push('/dashboard');
+          router.push('/');
         }
         router.refresh();
       }, 1000);

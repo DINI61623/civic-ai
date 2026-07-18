@@ -55,7 +55,7 @@ export default function SignUpPage() {
       if (!hasProfile) {
         router.push('/profile-completion');
       } else {
-        router.push('/dashboard');
+        router.push('/');
       }
     }
   }, [user, router]);

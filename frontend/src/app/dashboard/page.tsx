@@ -349,7 +349,7 @@ export default function Dashboard() {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-                {getGreeting()}, {userType === 'farmer' ? (farmerProfile?.fullName || profile?.full_name?.split(' ')[0] || 'Farmer Citizen') : (studentProfile.fullName || profile?.full_name?.split(' ')[0] || 'Student Citizen')} 👋
+                {getGreeting()}, {currentUser?.user_metadata?.full_name || profile?.full_name || (userType === 'farmer' ? 'Farmer Citizen' : 'Student Citizen')} 👋
               </h1>
               <p className="text-foreground-muted mt-1 text-sm md:text-base font-medium">Welcome back to CivicAI.</p>
             </div>
