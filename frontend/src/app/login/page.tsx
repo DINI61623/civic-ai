@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -114,6 +115,23 @@ export default function LoginPage() {
     }
   };
 
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setError(getFriendlyErrorMessage(err));
+      setLoading(false);
+    }
+  };
 
   const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,6 +253,25 @@ export default function LoginPage() {
         ) : (
           /* REGULAR LOGIN FORM */
           <div className="space-y-6">
+            {/* Google Social OAuth Button - Formatted as prominent Primary action */}
+            <button 
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/95 hover:to-secondary/95 text-white font-extrabold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-3 text-sm cursor-pointer shadow-md shadow-primary/10 hover:shadow-lg focus:outline-none"
+            >
+              <div className="bg-white p-1 rounded-lg">
+                <Image src="https://www.svgrepo.com/show/475656/google-color.svg" width={16} height={16} className="w-4 h-4" alt="Google Logo" />
+              </div>
+              Continue with Google
+            </button>
+
+            {/* Separator */}
+            <div className="relative flex items-center py-1">
+              <div className="flex-grow border-t border-slate-150 dark:border-slate-800"></div>
+              <span className="shrink-0 px-3 text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider">or sign in with email</span>
+              <div className="flex-grow border-t border-slate-150 dark:border-slate-800"></div>
+            </div>
+
             <form onSubmit={handleEmailLogin} className="space-y-6">
               <div className="space-y-4">
                 <div>
