@@ -224,12 +224,21 @@ export default function SettingsPage() {
 
       const key = userType === 'farmer' ? 'farmer_profile' : 'student_profile';
 
-      await supabase.auth.updateUser({
-        data: {
-          ...currentUser.user_metadata,
-          [key]: updatedProfile
-        }
-      });
+      const newMeta = {
+        ...currentUser.user_metadata,
+        [key]: updatedProfile
+      };
+
+      const { data, error } = await supabase.auth.updateUser({ data: newMeta });
+      if (error) throw error;
+
+      // Keep currentUser state fresh so subsequent saves don't use stale metadata
+      if (data?.user) {
+        setCurrentUser(data.user);
+      } else {
+        setCurrentUser((prev: any) => ({ ...prev, user_metadata: newMeta }));
+      }
+
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch (err) {
@@ -273,12 +282,17 @@ export default function SettingsPage() {
     setIsUpdating(true);
     try {
       const supabase = createClient();
-      await supabase.auth.updateUser({
-        data: {
-          ...currentUser.user_metadata,
-          theme_mode: mode
-        }
-      });
+      const newMeta = { ...currentUser.user_metadata, theme_mode: mode };
+      const { data, error } = await supabase.auth.updateUser({ data: newMeta });
+      if (error) throw error;
+
+      // Keep currentUser state fresh
+      if (data?.user) {
+        setCurrentUser(data.user);
+      } else {
+        setCurrentUser((prev: any) => ({ ...prev, user_metadata: newMeta }));
+      }
+
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch (err) {
